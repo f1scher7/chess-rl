@@ -21,15 +21,19 @@ class ChessEnv(gym.Env):
     def step(self, action_no):
         move = self.decode_action(action_no=action_no)
 
+        if not move:
+            # punishment for the illegal move
+            return self.get_observation(self.board), (-1, -1), False, {'illegal_move': True, 'board_fen': self.board.fen()}
+
         self.board.push(move)
 
-        white_reward, black_reward, done = self.get_reward()
+        white_reward, black_reward, end_of_game = self.get_reward()
 
         observation = self.get_observation(board=self.board)
 
-        info = {}
+        info = {'illegal_move': False, 'board_fen': self.board.fen()}
 
-        return observation, (white_reward, black_reward), done, info
+        return observation, (white_reward, black_reward), end_of_game, info
 
 
     def get_reward(self):
@@ -53,11 +57,8 @@ class ChessEnv(gym.Env):
 
 
     @staticmethod
-    def get_observation(board, empty_board=False):
+    def get_observation(board):
         observation = np.zeros((8, 8, 12), dtype=np.float32)
-
-        if empty_board:
-            return observation
 
         piece_map = {
             chess.PAWN: 0,
@@ -84,12 +85,17 @@ class ChessEnv(gym.Env):
         """
         Decode the number of action to legal chess move e.g. e4, because AI choose only the number of action
         """
-        return list(self.board.legal_moves)[action_no]
+        legal_moves = list(self.board.legal_moves)
+
+        if not legal_moves or action_no >= len(legal_moves):
+            return None
+
+        return legal_moves[action_no]
 
 
     def reset(self, seed=None, options=None):
         self.board.reset()
-        return self.get_observation(board=self.board, empty_board=True), {} # we should also return info dict but for now its empty
+        return self.get_observation(board=self.board), {} # we should also return info dict but for now its empty :D
 
 
     def update_elo(self, winner_color):
