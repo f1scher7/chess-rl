@@ -5,6 +5,7 @@ import numpy as np
 from backend.config import WHITE_ELO, BLACK_ELO, K_FACTOR
 from backend.utils.chess_env_utils import get_move_idx
 
+
 class ChessEnv(gym.Env):
 
     def __init__(self):
