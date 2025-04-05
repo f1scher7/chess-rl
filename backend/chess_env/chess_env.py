@@ -3,7 +3,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from backend.config import WHITE_ELO, BLACK_ELO, K_FACTOR
-from backend.utils.chess_env_utils import get_offset_move, get_move_index
+from backend.utils.chess_env_utils import get_offset_move, get_move_idx
 
 
 class ChessEnv(gym.Env):
@@ -81,7 +81,7 @@ class ChessEnv(gym.Env):
         legal_moves_idx = []
 
         for move in legal_moves:
-            legal_moves_idx.append(get_move_index(move=move))
+            legal_moves_idx.append(get_move_idx(move=move))
 
         return legal_moves_idx
 
