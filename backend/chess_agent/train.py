@@ -37,12 +37,12 @@ def make_step(env, observation):
 
     legal_actions_idx = env.get_legal_actions_idx()
 
-    mask = np.zeros(probabilities_np)
+    mask = np.zeros(probabilities_np.shape)
     mask[legal_actions_idx] = 1
 
     masked_logits = probabilities_np * mask
 
-    if sum(masked_logits) == 0:
+    if masked_logits.sum() == 0:
         action_chosen = np.random.choice(legal_actions_idx)
     else:
         action_chosen = np.random.choice(len(probabilities_np), p=probabilities_np)
