@@ -3,7 +3,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from backend.config import WHITE_ELO, BLACK_ELO, K_FACTOR
-from backend.utils.chess_env_utils import get_offset_move, get_move_idx
+from backend.utils.chess_env_utils import get_move_idx
 
 
 class ChessEnv(gym.Env):
