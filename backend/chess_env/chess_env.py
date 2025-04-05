@@ -3,6 +3,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from backend.config import WHITE_ELO, BLACK_ELO, K_FACTOR
+from backend.utils.chess_env_utils import get_offset_move, get_move_idx
 
 
 class ChessEnv(gym.Env):
@@ -14,8 +15,8 @@ class ChessEnv(gym.Env):
         self.white_elo = WHITE_ELO
         self.black_elo = BLACK_ELO
 
-        self.action_space = spaces.Discrete(4672) # all possible moves for each piece
-        self.observation_space = spaces.Box(0, 1, shape=(8, 8, 12), dtype=np.float32) # 12 = all white pieces [0:6] and black pieces [6:12]
+        self.action_space = spaces.Discrete(4672)  # all possible moves for each piece
+        self.observation_space = spaces.Box(0, 1, shape=(8, 8, 12), dtype=np.float32)  # 12 = all white pieces [0:6] and black pieces [6:12]
 
 
     def step(self, action_no):
@@ -27,7 +28,7 @@ class ChessEnv(gym.Env):
 
         observation = self.get_observation(board=self.board)
 
-        info = {}
+        info = {'board_fen': self.board.fen()}
 
         return observation, (white_reward, black_reward), done, info
 
@@ -53,11 +54,8 @@ class ChessEnv(gym.Env):
 
 
     @staticmethod
-    def get_observation(board, empty_board=False):
+    def get_observation(board):
         observation = np.zeros((8, 8, 12), dtype=np.float32)
-
-        if empty_board:
-            return observation
 
         piece_map = {
             chess.PAWN: 0,
@@ -69,7 +67,7 @@ class ChessEnv(gym.Env):
         }
 
         for square, piece in board.piece_map().items():
-            row, col = divmod(square, 8) # getting the coordinate from the square number e.g.: we have square no. 10 so we have  10 // 8 and 10 % 8  = (1, 2) =  B3
+            row, col = divmod(square, 8)  # getting the coordinate from the square number e.g.: we have square no. 10 so we have  10 // 8 and 10 % 8  = (1, 2) =  B3
             piece_type = piece_map[piece.piece_type]
 
             if piece.color == chess.WHITE:
@@ -80,16 +78,25 @@ class ChessEnv(gym.Env):
         return observation
 
 
+    def get_legal_actions_idx(self):
+        legal_moves = list(self.board.legal_moves)
+        legal_moves_idx = []
+
+        for move in legal_moves:
+            legal_moves_idx.append(get_move_idx(move=move))
+
+        return legal_moves_idx
+
+
     def decode_action(self, action_no):
-        """
-        Decode the number of action to legal chess move e.g. e4, because AI choose only the number of action
-        """
-        return list(self.board.legal_moves)[action_no]
+        # Decode the number of action to legal chess move e.g. e4, because AI choose only the number of action
+        legal_moves = list(self.board.legal_moves)
+        return legal_moves[action_no]
 
 
     def reset(self, seed=None, options=None):
         self.board.reset()
-        return self.get_observation(board=self.board, empty_board=True), {} # we should also return info dict but for now its empty
+        return self.get_observation(board=self.board), {}  # we should also return info dict but for now its empty :D
 
 
     def update_elo(self, winner_color):
