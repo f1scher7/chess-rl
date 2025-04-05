@@ -16,8 +16,8 @@ class ChessEnv(gym.Env):
         self.black_elo = BLACK_ELO
 
         self.action_space = spaces.Discrete(4672)  # all possible moves for each piece
-        self.observation_space = spaces.Box(0, 1, shape=(8, 8, 12),
-                                            dtype=np.float32)  # 12 = all white pieces [0:6] and black pieces [6:12]
+        self.observation_space = spaces.Box(0, 1, shape=(8, 8, 12), dtype=np.float32)  # 12 = all white pieces [0:6] and black pieces [6:12]
+
 
     def step(self, action_no):
         move = self.decode_action(action_no=action_no)
@@ -31,6 +31,7 @@ class ChessEnv(gym.Env):
         info = {'board_fen': self.board.fen()}
 
         return observation, (white_reward, black_reward), done, info
+
 
     def get_reward(self):
         if self.board.is_checkmate():
@@ -51,6 +52,7 @@ class ChessEnv(gym.Env):
 
         return 0, 0, False
 
+
     @staticmethod
     def get_observation(board):
         observation = np.zeros((8, 8, 12), dtype=np.float32)
@@ -65,8 +67,7 @@ class ChessEnv(gym.Env):
         }
 
         for square, piece in board.piece_map().items():
-            row, col = divmod(square,
-                              8)  # getting the coordinate from the square number e.g.: we have square no. 10 so we have  10 // 8 and 10 % 8  = (1, 2) =  B3
+            row, col = divmod(square, 8)  # getting the coordinate from the square number e.g.: we have square no. 10 so we have  10 // 8 and 10 % 8  = (1, 2) =  B3
             piece_type = piece_map[piece.piece_type]
 
             if piece.color == chess.WHITE:
@@ -75,6 +76,7 @@ class ChessEnv(gym.Env):
                 observation[row, col, piece_type + 6] = 1
 
         return observation
+
 
     def get_legal_actions_idx(self):
         legal_moves = list(self.board.legal_moves)
@@ -85,14 +87,17 @@ class ChessEnv(gym.Env):
 
         return legal_moves_idx
 
+
     def decode_action(self, action_no):
         # Decode the number of action to legal chess move e.g. e4, because AI choose only the number of action
         legal_moves = list(self.board.legal_moves)
         return legal_moves[action_no]
 
+
     def reset(self, seed=None, options=None):
         self.board.reset()
         return self.get_observation(board=self.board), {}  # we should also return info dict but for now its empty :D
+
 
     def update_elo(self, winner_color):
         expected_score_white = 1 / (1 + 10 ** ((self.black_elo - self.white_elo) / 400))  # chance of winning
@@ -107,6 +112,7 @@ class ChessEnv(gym.Env):
         else:
             self.white_elo += K_FACTOR * (0.5 - expected_score_white)
             self.black_elo += K_FACTOR * (0.5 - expected_score_black)
+
 
     def reset_elo(self):
         self.white_elo = 300
