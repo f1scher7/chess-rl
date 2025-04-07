@@ -2,6 +2,7 @@ import chess
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+from eval import Eval
 from backend.config import WHITE_ELO, BLACK_ELO, K_FACTOR
 from backend.utils.chess_env_utils import get_move_idx
 
@@ -38,9 +39,9 @@ class ChessEnv(gym.Env):
             winner_color = 'white' if self.board.turn == chess.BLACK else 'black'
 
             if winner_color == 'white':
-                white_reward, black_reward = 1, -1
+                white_reward, black_reward = 50, -50
             else:
-                white_reward, black_reward = -1, 1
+                white_reward, black_reward = -50, 50
 
             self.update_elo(winner_color=winner_color)
 
@@ -50,7 +51,17 @@ class ChessEnv(gym.Env):
             self.update_elo('draw')
             return 0, 0, True
 
-        return 0, 0, False
+        eval_score = Eval.evaluate_board(self.board)
+
+        if self.board.turn == chess.WHITE:
+            white_reward = eval_score
+            black_reward = -eval_score
+        else:
+            white_reward = -eval_score
+            black_reward = eval_score
+
+        return white_reward, black_reward, False
+
 
 
     @staticmethod
