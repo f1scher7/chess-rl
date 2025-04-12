@@ -26,15 +26,15 @@ class Eval:
 
     @staticmethod
     def evaluate_mobility(board):
-        curr_turn = board.turn
-        first_player_moves = len(list(board.legal_moves))
+        board_copy = board.copy()
+        curr_turn = board_copy.turn
 
-        board.turn = not curr_turn
-        second_player_moves = len(list(board.legal_moves))
+        first_player_moves = len(list(board_copy.legal_moves))
 
-        board.turn = curr_turn
+        board_copy.turn = not curr_turn
+        second_player_moves = len(list(board_copy.legal_moves))
 
-        if board.turn:
+        if board_copy.turn:
             return first_player_moves - second_player_moves
         else:
             return second_player_moves - first_player_moves
@@ -52,7 +52,7 @@ class Eval:
 
         black_king_safety = sum(
             1 for sq in chess.SquareSet(chess.BB_KING_ATTACKS[black_king])
-            if board.piece_at(sq) is not None and board.piece_at(sq).color == chess.WHITE
+            if board.piece_at(sq) is not None and board.piece_at(sq).color == chess.BLACK
         )
 
         return white_king_safety - black_king_safety
