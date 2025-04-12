@@ -3,8 +3,8 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from eval import Eval
-from backend.config import WHITE_ELO, BLACK_ELO, K_FACTOR
-from backend.utils.chess_env_utils import get_move_idx
+from backend.config import WHITE_ELO, BLACK_ELO, TERMINAL_BONUS
+from backend.utils.chess_env_utils import ChessEnvUtils
 
 
 class ChessEnv(gym.Env):
@@ -39,16 +39,16 @@ class ChessEnv(gym.Env):
             winner_color = 'white' if self.board.turn == chess.BLACK else 'black'
 
             if winner_color == 'white':
-                white_reward, black_reward = 50, -50
+                white_reward, black_reward = TERMINAL_BONUS, -TERMINAL_BONUS
             else:
-                white_reward, black_reward = -50, 50
+                white_reward, black_reward = -TERMINAL_BONUS, TERMINAL_BONUS
 
-            self.update_elo(winner_color=winner_color)
+            self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner_color=winner_color, white_elo=self.white_elo, black_elo=self.black_elo)
 
             return white_reward, black_reward, True
 
         elif self.board.is_stalemate() or self.board.is_insufficient_material() or self.board.can_claim_threefold_repetition() or self.board.is_fivefold_repetition():
-            self.update_elo('draw')
+            self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner_color='draw', white_elo=self.white_elo, black_elo=self.black_elo)
             return 0, 0, True
 
         eval_score = Eval.evaluate_board(self.board)
@@ -89,16 +89,6 @@ class ChessEnv(gym.Env):
         return observation
 
 
-    def get_legal_actions_idx(self):
-        legal_moves = list(self.board.legal_moves)
-        legal_moves_idx = []
-
-        for move in legal_moves:
-            legal_moves_idx.append(get_move_idx(move=move))
-
-        return legal_moves_idx
-
-
     def decode_action(self, action_no):
         # Decode the number of action to legal chess move e.g. e4, because AI choose only the number of action
         legal_moves = list(self.board.legal_moves)
@@ -108,21 +98,6 @@ class ChessEnv(gym.Env):
     def reset(self, seed=None, options=None):
         self.board.reset()
         return self.get_observation(board=self.board), {}  # we should also return info dict but for now its empty :D
-
-
-    def update_elo(self, winner_color):
-        expected_score_white = 1 / (1 + 10 ** ((self.black_elo - self.white_elo) / 400))  # chance of winning
-        expected_score_black = 1 / (1 + 10 ** ((self.white_elo - self.black_elo) / 400))  # chance of winning
-
-        if winner_color == 'white':
-            self.white_elo += K_FACTOR * (1 - expected_score_white)
-            self.black_elo += K_FACTOR * (0 - expected_score_black)
-        elif winner_color == 'black':
-            self.black_elo += K_FACTOR * (1 - expected_score_black)
-            self.white_elo += K_FACTOR * (0 - expected_score_white)
-        else:
-            self.white_elo += K_FACTOR * (0.5 - expected_score_white)
-            self.black_elo += K_FACTOR * (0.5 - expected_score_black)
 
 
     def reset_elo(self):
