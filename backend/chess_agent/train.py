@@ -3,6 +3,7 @@ import torch.optim as optim
 import numpy as np
 from backend.chess_env.chess_env import ChessEnv
 from backend.chess_agent.policy import ChessPolicy
+from backend.utils.chess_env_utils import ChessEnvUtils
 from backend.chess_agent.agent_config import *
 
 
@@ -19,34 +20,5 @@ chess_model = ChessPolicy(
 
 optimizer = optim.Adam(chess_model.parameters(), lr=LEARNING_RATE)
 
-
-def play_episode(env, model):
-    observation, info = env.reset()
-    done = False
-    total_reward = 0
-
-    while not done:
-        observation, white_reward, black_reward, done_temp, info = make_step(env=env, observation=observation)
-
-
-def make_step(env, observation):
-    # (batch_size(1), channels, height, weight)
-    observation_tensor = torch.tensor(observation, dtype=torch.float32).permute(3, 0, 1).unsqueeze(0)
-
-    probabilities_np = chess_model(x=observation_tensor).detach().numpy()[0]
-
-    legal_actions_idx = env.get_legal_actions_idx()
-
-    mask = np.zeros(probabilities_np.shape)
-    mask[legal_actions_idx] = 1
-
-    masked_logits = probabilities_np * mask
-
-    if masked_logits.sum() == 0:
-        action_chosen = np.random.choice(legal_actions_idx)
-    else:
-        action_chosen = np.random.choice(len(probabilities_np), p=probabilities_np)
-
-    return env.step(action_chosen)
 
 
