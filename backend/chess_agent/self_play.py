@@ -1,10 +1,9 @@
 import torch
 import torch.optim as optim
 import numpy as np
-from backend.chess_env.chess_env import ChessEnv
-from backend.chess_agent.policy import ChessPolicy
-from backend.utils.chess_env_utils import ChessEnvUtils
 from backend.chess_agent.agent_config import *
+from backend.utils.chess_env_utils import ChessEnvUtils
+from backend.utils.utils import Utils
 
 
 class SelfPlay:
@@ -16,12 +15,19 @@ class SelfPlay:
         self.all_black_rewards = []
 
 
-    def train(self, env, model, optimizer):
+    def train(self, env, model, optimizer, model_save=True):
         for episode in range (1, EPISODES + 1):
             self.collect_episode(env=env, model=model)
             self.compute_discounted_rewards()
-            self.update_model(optimizer=optimizer)
+
+            if episode % UPDATE_FREQUENCY == 0:
+                self.update_model(optimizer=optimizer)
+                self.reset_logs_and_rewards()
+
             observation, _ = env.reset()
+
+        if model_save:
+            Utils.save_model(model=model, optimizer=optimizer)
 
 
     def update_model(self, optimizer):
@@ -38,11 +44,6 @@ class SelfPlay:
 
 
     def collect_episode(self, env, model):
-        self.all_white_log_probs = []
-        self.all_black_log_probs = []
-        self.all_white_rewards = []
-        self.all_black_rewards = []
-
         observation, info = env.reset()
         white_reward = 0
         black_reward = 0
@@ -108,3 +109,10 @@ class SelfPlay:
         observation, white_reward, black_reward, done, info = env.step(action_chosen)
 
         return observation, white_reward, black_reward, done, info, log_prob
+
+
+    def reset_logs_and_rewards(self):
+        self.all_white_log_probs = []
+        self.all_black_log_probs = []
+        self.all_white_rewards = []
+        self.all_black_rewards = []
