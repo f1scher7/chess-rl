@@ -1,5 +1,4 @@
 import torch
-import torch.optim as optim
 import numpy as np
 from backend.chess_agent.agent_config import *
 from backend.utils.chess_env_utils import ChessEnvUtils
@@ -21,10 +20,12 @@ class SelfPlay:
             self.compute_discounted_rewards()
 
             if episode % UPDATE_FREQUENCY == 0:
-                self.update_model(optimizer=optimizer)
-                self.reset_logs_and_rewards()
+                loss = self.update_model(optimizer=optimizer)
+                self.reset_probs_and_rewards()
 
-            observation, _ = env.reset()
+                print("Model was updated!")
+                self.log_training_info(episode=episode, loss=loss)
+                env.save_game_pgn(episode=episode)
 
         if model_save:
             Utils.save_model(model=model, optimizer=optimizer)
@@ -35,6 +36,9 @@ class SelfPlay:
         loss = self.compute_loss()
         loss.backward() # gradients calculation
         optimizer.step() # weights and biases update
+
+        return loss
+
 
     def compute_loss(self):
         white_loss = -torch.sum(torch.tensor(data=self.all_white_log_probs, dtype=torch.float32) * torch.tensor(data=self.all_white_rewards, dtype=torch.float32))
@@ -86,7 +90,7 @@ class SelfPlay:
 
     @staticmethod
     def make_step(env, model, observation):
-        # observation_ tensor = (batch_size = 1, channels, height, width)
+        # observation_tensor = (batch_size = 1, channels, height, width)
         observation_tensor = torch.tensor(data=observation, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0)
 
         probabilities = model(observation_tensor)
@@ -111,8 +115,22 @@ class SelfPlay:
         return observation, white_reward, black_reward, done, info, log_prob
 
 
-    def reset_logs_and_rewards(self):
+    def reset_probs_and_rewards(self):
         self.all_white_log_probs = []
         self.all_black_log_probs = []
         self.all_white_rewards = []
         self.all_black_rewards = []
+
+
+    def log_training_info(self, episode, loss):
+        print(f"Episode: {episode}")
+        print(f"Loss: {loss:.5f}")
+
+        if self.all_white_rewards and self.all_black_rewards:
+            avg_white_rewards = sum(self.all_white_rewards) / len(self.all_white_rewards)
+            avg_black_rewards = sum(self.all_black_rewards) / len(self.all_black_rewards)
+
+            print(f"Avg white rewards: {avg_white_rewards:.5f}")
+            print(f"Avg black rewards: {avg_black_rewards:.5f}")
+
+        print("=" * 40)

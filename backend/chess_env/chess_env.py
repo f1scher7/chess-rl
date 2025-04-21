@@ -1,9 +1,11 @@
+import os
 import chess
+import chess.pgn
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from eval import Eval
-from backend.config import WHITE_ELO, BLACK_ELO, TERMINAL_BONUS
+from backend.config import WHITE_ELO, BLACK_ELO, TERMINAL_BONUS, SAVED_GAMES_PATH
 from backend.utils.chess_env_utils import ChessEnvUtils
 
 
@@ -103,3 +105,21 @@ class ChessEnv(gym.Env):
     def reset_elo(self):
         self.white_elo = 300
         self.black_elo = 300
+
+
+    def save_game_pgn(self, episode, event_name="Self-play", mode_name="self-play-train"):
+        game = chess.pgn.Game.from_board(board=self.board)
+        game.headers["Event"] = event_name
+        game.headers["White"] = f"elo: {self.white_elo}"
+        game.headers["Black"] = f"elo: {self.black_elo}"
+        game.headers["Result"] = self.board.result()
+
+        pgn_str = str(game)
+
+        file_name = f"{mode_name}-episode-{episode}-we-{self.white_elo}-be-{self.black_elo}.pgn"
+        file_path = os.path.join(SAVED_GAMES_PATH, file_name)
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(pgn_str)
+
+        print(f"Game was saved to: {file_path}")
