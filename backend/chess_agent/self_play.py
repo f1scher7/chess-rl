@@ -17,9 +17,9 @@ class SelfPlay:
     def train(self, env, model, optimizer, model_save=True):
         for episode in range (1, EPISODES + 1):
             self.collect_episode(env=env, model=model)
-            self.compute_discounted_rewards()
 
             if episode % UPDATE_FREQUENCY == 0:
+                self.compute_discounted_rewards()
                 loss = self.update_model(optimizer=optimizer)
                 self.reset_probs_and_rewards()
 
@@ -101,16 +101,16 @@ class SelfPlay:
         mask = np.zeros(probabilities_np.shape)
         mask[legal_actions_idx] = 1
         masked_probs = mask * probabilities_np
+        masked_probs_norm = masked_probs / masked_probs.sum()
 
         if np.random.rand() < EPSILON or masked_probs.sum() == 0:
             action_chosen = np.random.choice(legal_actions_idx)
-            log_prob = None
         else:
-            masked_probs_norm = masked_probs / masked_probs.sum()
             action_chosen = np.random.choice(len(masked_probs_norm), p=masked_probs_norm)
-            log_prob = torch.log(input=torch.tensor(masked_probs_norm[action_chosen] + 1e-8, dtype=torch.float32))
 
-        observation, white_reward, black_reward, done, info = env.step(action_chosen)
+        log_prob = torch.log(input=torch.tensor(masked_probs_norm[action_chosen] + 1e-8, dtype=torch.float32))
+
+        observation, (white_reward, black_reward), done, info = env.step(action_chosen)
 
         return observation, white_reward, black_reward, done, info, log_prob
 
