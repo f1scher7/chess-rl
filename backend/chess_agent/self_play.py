@@ -17,9 +17,9 @@ class SelfPlay:
     def train(self, env, model, optimizer, model_save=True):
         for episode in range (1, EPISODES + 1):
             self.collect_episode(env=env, model=model)
-            self.compute_discounted_rewards()
 
             if episode % UPDATE_FREQUENCY == 0:
+                self.compute_discounted_rewards()
                 loss = self.update_model(optimizer=optimizer)
                 self.reset_probs_and_rewards()
 
@@ -51,22 +51,30 @@ class SelfPlay:
         observation, info = env.reset()
         white_reward = 0
         black_reward = 0
+
+        white_log_prob = None
+        black_log_prob = None
+
         done = False
 
         while not done:
-            state = observation
-
             observation, white_reward, black_reward, done, info, log_prob = SelfPlay.make_step(env=env, model=model, observation=observation)
 
             if env.board.turn:
-                self.all_white_rewards.append((state, white_reward))
+                self.all_white_rewards.append(white_reward)
                 self.all_white_log_probs.append(log_prob)
+                white_log_prob = log_prob
             else:
-                self.all_black_rewards.append((state, black_reward))
+                self.all_black_rewards.append(black_reward)
                 self.all_black_log_probs.append(log_prob)
+                black_log_prob = log_prob
 
-        self.all_white_rewards.append((observation, white_reward))
-        self.all_black_rewards.append((observation, black_reward))
+        if black_log_prob and white_log_prob:
+            self.all_white_log_probs.append(white_log_prob)
+            self.all_black_log_probs.append(black_log_prob)
+
+        self.all_white_rewards.append(white_reward)
+        self.all_black_rewards.append(black_reward)
 
 
     def compute_discounted_rewards(self):
@@ -76,11 +84,11 @@ class SelfPlay:
         white_discounted_rewards = []
         black_discounted_rewards = []
 
-        for _, reward in reversed(self.all_white_rewards):
+        for reward in reversed(self.all_white_rewards):
             white_cumulative_rewards = reward + GAMMA * white_cumulative_rewards
             white_discounted_rewards.insert(0, white_cumulative_rewards)
 
-        for _, reward in reversed(self.all_black_rewards):
+        for reward in reversed(self.all_black_rewards):
             black_cumulative_rewards = reward + GAMMA * black_cumulative_rewards
             black_discounted_rewards.insert(0, black_cumulative_rewards)
 
@@ -101,16 +109,16 @@ class SelfPlay:
         mask = np.zeros(probabilities_np.shape)
         mask[legal_actions_idx] = 1
         masked_probs = mask * probabilities_np
+        masked_probs_norm = masked_probs / masked_probs.sum()
 
         if np.random.rand() < EPSILON or masked_probs.sum() == 0:
             action_chosen = np.random.choice(legal_actions_idx)
-            log_prob = None
         else:
-            masked_probs_norm = masked_probs / masked_probs.sum()
             action_chosen = np.random.choice(len(masked_probs_norm), p=masked_probs_norm)
-            log_prob = torch.log(input=torch.tensor(masked_probs_norm[action_chosen] + 1e-8, dtype=torch.float32))
 
-        observation, white_reward, black_reward, done, info = env.step(action_chosen)
+        log_prob = torch.log(input=torch.tensor(masked_probs_norm[action_chosen] + 1e-8, dtype=torch.float32))
+
+        observation, (white_reward, black_reward), done, info = env.step(action_chosen)
 
         return observation, white_reward, black_reward, done, info, log_prob
 

@@ -4,7 +4,7 @@ import chess.pgn
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from eval import Eval
+from backend.chess_env.eval import Eval
 from backend.config import WHITE_ELO, BLACK_ELO, TERMINAL_BONUS, SAVED_GAMES_PATH
 from backend.utils.chess_env_utils import ChessEnvUtils
 
@@ -93,8 +93,11 @@ class ChessEnv(gym.Env):
 
     def decode_action(self, action_no):
         # Decode the number of action to legal chess move e.g. e4, because AI choose only the number of action
-        legal_moves = list(self.board.legal_moves)
-        return legal_moves[action_no]
+        for move in self.board.legal_moves:
+            if ChessEnvUtils.get_move_idx(move=move) == action_no:
+                return move
+
+        return None
 
 
     def reset(self, seed=None, options=None):

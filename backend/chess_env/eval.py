@@ -17,7 +17,7 @@ class Eval:
         evaluation = 0
 
         for square, piece in board.piece_map().items():
-            value = piece_values.get(piece.type)
+            value = piece_values.get(piece.piece_type)
 
             evaluation += value if piece.color == chess.WHITE else -value
 
