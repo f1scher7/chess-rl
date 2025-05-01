@@ -51,22 +51,30 @@ class SelfPlay:
         observation, info = env.reset()
         white_reward = 0
         black_reward = 0
+
+        white_log_prob = None
+        black_log_prob = None
+
         done = False
 
         while not done:
-            state = observation
-
             observation, white_reward, black_reward, done, info, log_prob = SelfPlay.make_step(env=env, model=model, observation=observation)
 
             if env.board.turn:
-                self.all_white_rewards.append((state, white_reward))
+                self.all_white_rewards.append(white_reward)
                 self.all_white_log_probs.append(log_prob)
+                white_log_prob = log_prob
             else:
-                self.all_black_rewards.append((state, black_reward))
+                self.all_black_rewards.append(black_reward)
                 self.all_black_log_probs.append(log_prob)
+                black_log_prob = log_prob
 
-        self.all_white_rewards.append((observation, white_reward))
-        self.all_black_rewards.append((observation, black_reward))
+        if black_log_prob and white_log_prob:
+            self.all_white_log_probs.append(white_log_prob)
+            self.all_black_log_probs.append(black_log_prob)
+
+        self.all_white_rewards.append(white_reward)
+        self.all_black_rewards.append(black_reward)
 
 
     def compute_discounted_rewards(self):
@@ -76,11 +84,11 @@ class SelfPlay:
         white_discounted_rewards = []
         black_discounted_rewards = []
 
-        for _, reward in reversed(self.all_white_rewards):
+        for reward in reversed(self.all_white_rewards):
             white_cumulative_rewards = reward + GAMMA * white_cumulative_rewards
             white_discounted_rewards.insert(0, white_cumulative_rewards)
 
-        for _, reward in reversed(self.all_black_rewards):
+        for reward in reversed(self.all_black_rewards):
             black_cumulative_rewards = reward + GAMMA * black_cumulative_rewards
             black_discounted_rewards.insert(0, black_cumulative_rewards)
 
