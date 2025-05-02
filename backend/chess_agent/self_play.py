@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+from torch.distributions import Categorical
+
 from backend.chess_agent.agent_config import *
 from backend.utils.chess_env_utils import ChessEnvUtils
 from backend.utils.utils import Utils
@@ -7,11 +9,14 @@ from backend.utils.utils import Utils
 
 class SelfPlay:
 
-    def __init__(self):
+    def __init__(self, device):
+        self.device = device
+
         self.all_white_log_probs = []
         self.all_black_log_probs = []
         self.all_white_rewards = []
         self.all_black_rewards = []
+
 
 
     def train(self, env, model, optimizer, model_save=True):
@@ -20,12 +25,15 @@ class SelfPlay:
 
             if episode % UPDATE_FREQUENCY == 0:
                 self.compute_discounted_rewards()
+
                 loss = self.update_model(optimizer=optimizer)
-                self.reset_probs_and_rewards()
 
                 print("Model was updated!")
                 self.log_training_info(episode=episode, loss=loss)
                 env.save_game_pgn(episode=episode)
+                print("=" * 40)
+
+                self.reset_probs_and_rewards()
 
         if model_save:
             Utils.save_model(model=model, optimizer=optimizer)
@@ -34,15 +42,24 @@ class SelfPlay:
     def update_model(self, optimizer):
         optimizer.zero_grad()
         loss = self.compute_loss()
-        loss.backward() # gradients calculation
-        optimizer.step() # weights and biases update
+        loss.backward()  # gradients calculation
+        optimizer.step()  # weights and biases update
 
         return loss
 
 
     def compute_loss(self):
-        white_loss = -torch.sum(torch.tensor(data=self.all_white_log_probs, dtype=torch.float32) * torch.tensor(data=self.all_white_rewards, dtype=torch.float32))
-        black_loss = -torch.sum(torch.tensor(data=self.all_black_log_probs, dtype=torch.float32) * torch.tensor(data=self.all_black_rewards, dtype=torch.float32))
+        white_log_probs = torch.stack(self.all_white_log_probs)
+        black_log_probs = torch.stack(self.all_black_log_probs)
+
+        if not isinstance(self.all_white_rewards, torch.Tensor):
+            self.all_white_rewards = torch.tensor(data=self.all_white_rewards, dtype=torch.float32).to(device=self.device).to(device=self.device)
+
+        if not isinstance(self.all_black_rewards, torch.Tensor):
+            self.all_white_rewards = torch.tensor(data=self.all_black_rewards, dtype=torch.float32).to(device=self.device).to(device=self.device)
+
+        white_loss = -(white_log_probs * self.all_white_rewards).sum()
+        black_loss = -(black_log_probs * self.all_black_rewards).sum()
 
         return white_loss + black_loss
 
@@ -58,7 +75,7 @@ class SelfPlay:
         done = False
 
         while not done:
-            observation, white_reward, black_reward, done, info, log_prob = SelfPlay.make_step(env=env, model=model, observation=observation)
+            observation, white_reward, black_reward, done, info, log_prob = SelfPlay.make_step(env=env, model=model, observation=observation, device=self.device)
 
             if env.board.turn:
                 self.all_white_rewards.append(white_reward)
@@ -92,33 +109,35 @@ class SelfPlay:
             black_cumulative_rewards = reward + GAMMA * black_cumulative_rewards
             black_discounted_rewards.insert(0, black_cumulative_rewards)
 
-        self.all_white_rewards = torch.tensor(data=white_discounted_rewards, dtype=torch.float32)
-        self.all_black_rewards = torch.tensor(data=black_discounted_rewards, dtype=torch.float32)
+        self.all_white_rewards = torch.tensor(data=white_discounted_rewards, dtype=torch.float32).to(device=self.device)
+        self.all_black_rewards = torch.tensor(data=black_discounted_rewards, dtype=torch.float32).to(device=self.device)
 
 
     @staticmethod
-    def make_step(env, model, observation):
+    def make_step(env, model, observation, device):
         # observation_tensor = (batch_size = 1, channels, height, width)
-        observation_tensor = torch.tensor(data=observation, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0)
+        observation_tensor = torch.tensor(data=observation, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0).to(device=device)
 
         probabilities = model(observation_tensor)
-        probabilities_np = probabilities.detach().numpy()[0]
-
         legal_actions_idx = ChessEnvUtils.get_legal_actions_idx(env.board)
 
-        mask = np.zeros(probabilities_np.shape)
-        mask[legal_actions_idx] = 1
-        masked_probs = mask * probabilities_np
+        mask = torch.zeros_like(probabilities)
+        mask[0, legal_actions_idx] = 1.0
+        masked_probs = mask * probabilities
         masked_probs_norm = masked_probs / masked_probs.sum()
 
+        dist = Categorical(masked_probs_norm)  # discrete distribution
+
         if np.random.rand() < EPSILON or masked_probs.sum() == 0:
-            action_chosen = np.random.choice(legal_actions_idx)
+            random_idx = torch.randint(len(legal_actions_idx), (1,)).item()
+            action_chosen = legal_actions_idx[random_idx]
+            action_chosen = torch.tensor(data=action_chosen, dtype=torch.long).to(device=device)
         else:
-            action_chosen = np.random.choice(len(masked_probs_norm), p=masked_probs_norm)
+            action_chosen = dist.sample()
 
-        log_prob = torch.log(input=torch.tensor(masked_probs_norm[action_chosen] + 1e-8, dtype=torch.float32))
+        log_prob = dist.log_prob(action_chosen)
 
-        observation, (white_reward, black_reward), done, info = env.step(action_chosen)
+        observation, (white_reward, black_reward), done, info = env.step(action_chosen.item())
 
         return observation, white_reward, black_reward, done, info, log_prob
 
@@ -134,11 +153,10 @@ class SelfPlay:
         print(f"Episode: {episode}")
         print(f"Loss: {loss:.5f}")
 
-        if self.all_white_rewards and self.all_black_rewards:
-            avg_white_rewards = sum(self.all_white_rewards) / len(self.all_white_rewards)
-            avg_black_rewards = sum(self.all_black_rewards) / len(self.all_black_rewards)
-
+        if isinstance(self.all_white_rewards, torch.Tensor):
+            avg_white_rewards = self.all_white_rewards.mean().item()
             print(f"Avg white rewards: {avg_white_rewards:.5f}")
-            print(f"Avg black rewards: {avg_black_rewards:.5f}")
 
-        print("=" * 40)
+        if isinstance(self.all_black_rewards, torch.Tensor):
+            avg_black_rewards = self.all_black_rewards.mean().item()
+            print(f"Avg black rewards: {avg_black_rewards:.5f}")
