@@ -21,6 +21,8 @@ class ChessEnv(gym.Env):
         self.action_space = spaces.Discrete(4672)  # all possible moves for each piece
         self.observation_space = spaces.Box(0, 1, shape=(8, 8, 12), dtype=np.float32)  # 12 = all white pieces [0:6] and black pieces [6:12]
 
+        self.eval_score_list = []
+
 
     def step(self, action_no):
         move = self.decode_action(action_no=action_no)
@@ -61,6 +63,8 @@ class ChessEnv(gym.Env):
         else:
             white_reward = -eval_score
             black_reward = eval_score
+
+        self.eval_score_list.append(eval_score)
 
         return white_reward, black_reward, False
 
@@ -119,7 +123,7 @@ class ChessEnv(gym.Env):
 
         pgn_str = str(game)
 
-        file_name = f"{mode_name}-episode-{episode}-we-{self.white_elo}-be-{self.black_elo}.pgn"
+        file_name = f"{mode_name}-episode{episode}-w_elo{int(self.white_elo)}-b_elo{int(self.black_elo)}.pgn"
         file_path = os.path.join(SAVED_GAMES_PATH, file_name)
 
         with open(file_path, "w", encoding="utf-8") as f:

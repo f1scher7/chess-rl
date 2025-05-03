@@ -18,25 +18,32 @@ class SelfPlay:
         self.all_black_rewards = []
 
 
-
     def train(self, env, model, optimizer, model_save=True):
-        for episode in range (1, EPISODES + 1):
-            self.collect_episode(env=env, model=model)
+        try:
+            for episode in range (1, EPISODES + 1):
+                self.collect_episode(env=env, model=model)
 
-            if episode % UPDATE_FREQUENCY == 0:
-                self.compute_discounted_rewards()
+                print(f"Avg eval score: {sum(env.eval_score_list) / len(env.eval_score_list)}")
+                env.eval_score_list = []
 
-                loss = self.update_model(optimizer=optimizer)
+                if episode % UPDATE_FREQUENCY == 0:
+                    self.compute_discounted_rewards()
 
-                print("Model was updated!")
-                self.log_training_info(episode=episode, loss=loss)
-                env.save_game_pgn(episode=episode)
-                print("=" * 40)
+                    loss = self.update_model(optimizer=optimizer)
 
-                self.reset_probs_and_rewards()
+                    print("Model was updated!")
+                    self.log_training_info(episode=episode, loss=loss)
+                    env.save_game_pgn(episode=episode)
+                    print("=" * 40)
 
-        if model_save:
-            Utils.save_model(model=model, optimizer=optimizer)
+                    self.reset_probs_and_rewards()
+        except KeyboardInterrupt:
+            if model_save:
+                print("Training interrupted! Saving model...")
+                Utils.save_model(model=model, optimizer=optimizer)
+        finally:
+            if model_save:
+                Utils.save_model(model=model, optimizer=optimizer)
 
 
     def update_model(self, optimizer):
