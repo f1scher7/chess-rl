@@ -1,6 +1,9 @@
 import torch
+import chess.pgn
 from datetime import datetime
+from io import StringIO
 from backend.config import SAVED_MODELS_PATH
+from backend.api.models import SavedGameContent
 
 
 class Utils:
@@ -37,3 +40,21 @@ class Utils:
         print(f"Loaded!")
 
 
+    @staticmethod
+    def extract_data_from_pgn(file):
+        with open(file, 'r') as f:
+            pgn_text = f.read()
+
+        pgn_io = StringIO(pgn_text)
+
+        game = chess.pgn.read_game(pgn_io)
+
+        white_elo = int(game.headers["White"])
+        black_elo = int(game.headers["Black"])
+        result = game.headers["Result"]
+        moves = []
+
+        for move in game.mainline_moves():
+            moves.append(move.uci())
+
+        return SavedGameContent(white_elo=white_elo, black_elo=black_elo, result=result, moves=moves)
