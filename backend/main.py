@@ -22,6 +22,7 @@ chess_env = ChessEnv()
 #     fc_out_features_list=[32768, 16384, 4762],
 # ).to(device=device)
 
+# FOR 4gb vRAM
 chess_model = ChessPolicy(
     conv_layers_num=3,
     in_channels_list=[12, 64, 128],
