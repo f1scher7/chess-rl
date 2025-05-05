@@ -116,10 +116,10 @@ class ChessEnv(gym.Env):
 
     def save_game_pgn(self, episode, event_name="Self-play", mode_name="self-play-train"):
         game = chess.pgn.Game.from_board(board=self.board)
-        game.headers["Event"] = event_name
-        game.headers["White"] = f"elo: {self.white_elo}"
-        game.headers["Black"] = f"elo: {self.black_elo}"
-        game.headers["Result"] = self.board.result()
+        game.headers["event"] = event_name
+        game.headers["white_elo"] = str(self.white_elo)
+        game.headers["black_elo"] = str(self.black_elo)
+        game.headers["result"] = self.board.result()
 
         pgn_str = str(game)
 
