@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List
 
 
-class File(BaseModel):
+class ChessRlFile(BaseModel):
     file_name: str
 
 
@@ -17,10 +17,10 @@ class PathType(str, Enum):
 
 
 class SavedGameContent(BaseModel):
-    white_elo: int
-    black_elo: int
+    white_elo: str
+    black_elo: str
     result: str
-    moves: list
+    moves: List[str]
 
 
 class Move(BaseModel):

@@ -41,11 +41,11 @@ async def get_file_list(path_type: PathType):
 
 
 @app.get("/saved-game", response_model=SavedGameContent)
-async def get_saved_game(file: File):
-    file_path = os.path.join(SAVED_GAMES_PATH, file.file_name)
+async def get_saved_game(file: str):
+    file_path = os.path.join(SAVED_GAMES_PATH, file)
 
     if os.path.isfile(file_path):
         saved_game_content = Utils.extract_data_from_pgn(file=file_path)
         return saved_game_content
     else:
-        return SavedGameContent(white_elo=-1, black_elo=-1, result="", moves=[])
+        return SavedGameContent(white_elo='-1', black_elo='-1', result="", moves=[])

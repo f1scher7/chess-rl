@@ -19,6 +19,8 @@ class SelfPlay:
 
 
     def train(self, env, model, optimizer, model_save=True):
+        interrupted = False
+
         try:
             for episode in range (1, EPISODES + 1):
                 self.collect_episode(env=env, model=model)
@@ -39,10 +41,11 @@ class SelfPlay:
                     self.reset_probs_and_rewards()
         except KeyboardInterrupt:
             if model_save:
+                interrupted = True
                 print("Training interrupted! Saving model...")
                 Utils.save_model(model=model, optimizer=optimizer)
         finally:
-            if model_save:
+            if model_save and not interrupted:
                 Utils.save_model(model=model, optimizer=optimizer)
 
 
