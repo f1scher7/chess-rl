@@ -49,9 +49,9 @@ class Utils:
 
         game = chess.pgn.read_game(pgn_io)
 
-        white_elo = int(game.headers["White"])
-        black_elo = int(game.headers["Black"])
-        result = game.headers["Result"]
+        white_elo = game.headers["white_elo"].split('.')[0]
+        black_elo = game.headers["black_elo"].split('.')[0]
+        result = game.headers["result"]
         moves = []
 
         for move in game.mainline_moves():
