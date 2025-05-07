@@ -11,9 +11,12 @@
     "@types/node": "^16.18.126",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
-    "bootstrap": "^5.3.3",
+    "bootstrap": "^5.3.5",
+    "chess.js": "^1.2.0",
     "cross-env": "^7.0.3",
     "react": "^19.0.0",
+    "react-bootstrap": "^2.10.9",
+    "react-chessboard": "^4.7.3",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.4.0",
     "react-scripts": "^5.0.1",
@@ -28,12 +31,6 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -47,8 +44,14 @@
     ]
   },
   "devDependencies": {
+    "@eslint/js": "^9.26.0",
     "autoprefixer": "^10.4.21",
+    "eslint": "^9.26.0",
+    "eslint-config": "^0.1.0",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.0.0",
     "postcss": "^8.5.3",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "typescript-eslint": "^8.31.1"
   }
 }
