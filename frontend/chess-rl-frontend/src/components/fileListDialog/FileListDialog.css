@@ -1,0 +1,6 @@
+.no-center {
+    min-width: 25% !important;
+    margin-left: 30% !important;
+    margin-right: auto;
+    transform: none !important;
+}
