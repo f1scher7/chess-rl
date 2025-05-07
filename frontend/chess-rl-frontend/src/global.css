@@ -1,0 +1,21 @@
+.modal-header .btn-close:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+.pagination > li:not(.active) > a {
+    color: #212529;
+}
+
+.pagination > .active > a {
+    color: white;
+    background-color: #495057 !important;
+    border: solid 1px #495057 !important;
+}
+
+.list-group-item.active {
+    color: white;
+    background-color: #212529 !important;
+    border: solid 1px #212529 !important;
+    border-radius: 5px !important;
+}
