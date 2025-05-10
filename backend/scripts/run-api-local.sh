@@ -1,5 +1,5 @@
 #!/bin/bash
 
 
-cd /home/fischer/IT/projects/chess-rl/ || exit
+cd /path/to/chess-rl || exit
 uvicorn backend.api.main:app --reload
