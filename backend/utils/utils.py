@@ -1,7 +1,9 @@
 import torch
 import chess.pgn
+import matplotlib.pyplot as plt
 from datetime import datetime
 from io import StringIO
+from backend.chess_agent.agent_config import UPDATE_FREQUENCY, EPISODES
 from backend.config import SAVED_MODELS_PATH
 from backend.api.models import SavedGameContent
 
@@ -16,7 +18,7 @@ class Utils:
     @staticmethod
     def save_model(model, optimizer):
         # filename = f"chess-rl-by-f1scher7-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
-        filename = f"chess-rl-by-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
+        filename = f"chess-rl-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
         final_path = SAVED_MODELS_PATH + filename
 
         torch.save({
@@ -37,7 +39,7 @@ class Utils:
         if optimizer and 'optimizer_state_dict' in checkpoint:
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-        print(f"Loaded!")
+        print(f"Model and optimizer were loaded!")
 
 
     @staticmethod
@@ -58,3 +60,15 @@ class Utils:
             moves.append(move.uci())
 
         return SavedGameContent(white_elo=white_elo, black_elo=black_elo, result=result, moves=moves)
+
+
+    @staticmethod
+    def plot_loss(loss_list):
+        episode_list = [i for i in range(UPDATE_FREQUENCY, EPISODES, UPDATE_FREQUENCY)]
+
+        plt.plot(episode_list, loss_list, label="Loss")
+        plt.title("Training Loss")
+        plt.xlabel("Episodes")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.show()
