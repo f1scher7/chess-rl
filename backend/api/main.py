@@ -32,9 +32,11 @@ async def get_file_list(path_type: PathType):
     path = path_map.get(path_type, "")
 
     if path:
-        file_list = FileList(file_names=[
-            f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
-        ])
+        file_names = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        file_names.sort(key=lambda f: os.path.getmtime(os.path.join(path, f)), reverse=True)
+
+        file_list = FileList(file_names=file_names)
+
         return file_list
     else:
         return FileList(file_names=[])
