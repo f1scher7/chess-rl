@@ -78,4 +78,4 @@ fabric.properties
 
 /plans.txt
 /todo.txt
-/backend/scripts/remove-saved-games.sh
+/backend/scripts/remove/
