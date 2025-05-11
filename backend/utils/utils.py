@@ -64,7 +64,7 @@ class Utils:
 
     @staticmethod
     def plot_loss(loss_list):
-        episode_list = [i for i in range(UPDATE_FREQUENCY, EPISODES, UPDATE_FREQUENCY)]
+        episode_list = [i for i in range(UPDATE_FREQUENCY, EPISODES + 1, UPDATE_FREQUENCY)]
 
         plt.plot(episode_list, loss_list, label="Loss")
         plt.title("Training Loss")
