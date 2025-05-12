@@ -1,13 +1,14 @@
 import torch.optim as optim
-
 from backend.chess_agent.agent_config import LEARNING_RATE
 from backend.chess_agent.policy import ChessPolicy
 from backend.chess_agent.self_play import SelfPlay
 from backend.chess_env.chess_env import ChessEnv
+from backend.config import SAVED_MODELS_PATH
 from backend.utils.utils import Utils
 
 
 device = Utils.get_device()
+
 
 # SELF PLAY
 chess_env = ChessEnv()
@@ -40,10 +41,15 @@ chess_model = ChessPolicy(
 #     kernel_size_list=[3, 3, 3],
 #     fc_layers_num=3,
 #     fc_in_features_list=[16384, 8192, 4096],
-#     fc_out_features_list=[16384, 8192, 4762],
+#     fc_out_features_list=[8192, 4096, 4762],
 # ).to(device=device)
 
 adam = optim.Adam(chess_model.parameters(), lr=LEARNING_RATE)
+
+
+# LOAD MODEL AND OPTIM
+# path = f"{SAVED_MODELS_PATH}model.pth"
+# Utils.load_model(model=chess_model, optimizer=adam, path=path)
 
 
 self_play = SelfPlay(device=device)
