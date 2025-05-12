@@ -5,7 +5,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from backend.chess_env.eval import Eval
-from backend.config import WHITE_ELO, BLACK_ELO, TERMINAL_BONUS, SAVED_GAMES_PATH
+from backend.config import WHITE_ELO, BLACK_ELO, TERMINAL_BONUS, SAVED_GAMES_PATH, MAX_MOVES_PER_EPISODE
 from backend.utils.chess_env_utils import ChessEnvUtils
 
 
@@ -27,15 +27,15 @@ class ChessEnv(gym.Env):
     def step(self, action_no):
         move = self.decode_action(action_no=action_no)
 
+        reward_or_penalty = Eval.evaluate_capture_decision(board=self.board, move_played=move)
+
         self.board.push(move)
 
-        white_reward, black_reward, done = self.get_reward()
-
         observation = self.get_observation(board=self.board)
-
+        white_reward, black_reward, done = self.get_reward()
         info = {'board_fen': self.board.fen()}
 
-        return observation, (white_reward, black_reward), done, info
+        return observation, (white_reward + reward_or_penalty, black_reward + reward_or_penalty), done, info
 
 
     def get_reward(self):
@@ -50,7 +50,6 @@ class ChessEnv(gym.Env):
             self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner_color=winner_color, white_elo=self.white_elo, black_elo=self.black_elo)
 
             return white_reward, black_reward, True
-
         elif self.board.is_stalemate() or self.board.is_insufficient_material() or self.board.can_claim_threefold_repetition() or self.board.is_fivefold_repetition():
             self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner_color='draw', white_elo=self.white_elo, black_elo=self.black_elo)
             return 0, 0, True
@@ -65,6 +64,17 @@ class ChessEnv(gym.Env):
             black_reward = eval_score
 
         self.eval_score_list.append(eval_score)
+
+        if len(self.board.move_stack) > MAX_MOVES_PER_EPISODE:
+            self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner_color='draw', white_elo=self.white_elo, black_elo=self.black_elo)
+
+            if eval_score > 1:
+                white_reward -= TERMINAL_BONUS
+            elif eval_score < -1:
+                black_reward -= TERMINAL_BONUS
+
+            return white_reward, black_reward, True
+
 
         return white_reward, black_reward, False
 
@@ -106,6 +116,8 @@ class ChessEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         self.board.reset()
+        Eval.reset_castling_rewards()
+        self.eval_score_list = []
         return self.get_observation(board=self.board), {}  # we should also return info dict but for now its empty :D
 
 
