@@ -16,17 +16,17 @@ class SelfPlay:
         self.all_black_log_probs = []
         self.all_white_rewards = []
         self.all_black_rewards = []
+        self.loss_list = []
 
 
-    def train(self, env, model, optimizer, model_save=True):
+    def train(self, env, model, optimizer, init_episode=1, model_save=True):
         interrupted = False
 
         try:
-            for episode in range (1, EPISODES + 1):
+            for episode in range (init_episode, EPISODES + 1):
                 self.collect_episode(env=env, model=model)
 
-                print(f"Avg eval score: {sum(env.eval_score_list) / len(env.eval_score_list)}")
-                env.eval_score_list = []
+                print(f"Avg eval score per episode: {sum(env.eval_score_list) / len(env.eval_score_list)}")
 
                 if episode % UPDATE_FREQUENCY == 0:
                     self.compute_discounted_rewards()
@@ -47,6 +47,8 @@ class SelfPlay:
         finally:
             if model_save and not interrupted:
                 Utils.save_model(model=model, optimizer=optimizer)
+
+            Utils.plot_loss(loss_list=self.loss_list)
 
 
     def update_model(self, optimizer):
@@ -119,8 +121,23 @@ class SelfPlay:
             black_cumulative_rewards = reward + GAMMA * black_cumulative_rewards
             black_discounted_rewards.insert(0, black_cumulative_rewards)
 
-        self.all_white_rewards = torch.tensor(data=white_discounted_rewards, dtype=torch.float32).to(device=self.device)
-        self.all_black_rewards = torch.tensor(data=black_discounted_rewards, dtype=torch.float32).to(device=self.device)
+        norm_white_discounted_rewards = SelfPlay.normalize_rewards(white_discounted_rewards)
+        norm_black_discounted_rewards = SelfPlay.normalize_rewards(black_discounted_rewards)
+
+        self.all_white_rewards = torch.tensor(data=norm_white_discounted_rewards, dtype=torch.float32).to(device=self.device)
+        self.all_black_rewards = torch.tensor(data=norm_black_discounted_rewards, dtype=torch.float32).to(device=self.device)
+
+
+    @staticmethod
+    def normalize_rewards(rewards):
+        """
+        Z-score normalization (rescale data to have 0 mean)
+        """
+        rewards_np = np.array(rewards, dtype=np.float32)
+        mean = rewards_np.mean()
+        std = rewards_np.std() + 1e-8
+
+        return (rewards_np - mean) / std
 
 
     @staticmethod
@@ -129,18 +146,18 @@ class SelfPlay:
         observation_tensor = torch.tensor(data=observation, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0).to(device=device)
 
         probabilities = model(observation_tensor)
-        legal_actions_idx = ChessEnvUtils.get_legal_actions_idx(env.board)
+        legal_action_idxs = ChessEnvUtils.get_legal_action_idxs(env.board)
 
         mask = torch.zeros_like(probabilities)
-        mask[0, legal_actions_idx] = 1.0
+        mask[0, legal_action_idxs] = 1.0
         masked_probs = mask * probabilities
         masked_probs_norm = masked_probs / masked_probs.sum()
 
         dist = Categorical(masked_probs_norm)  # discrete distribution
 
         if np.random.rand() < EPSILON or masked_probs.sum() == 0:
-            random_idx = torch.randint(len(legal_actions_idx), (1,)).item()
-            action_chosen = legal_actions_idx[random_idx]
+            random_idx = torch.randint(len(legal_action_idxs), (1,)).item()
+            action_chosen = legal_action_idxs[random_idx]
             action_chosen = torch.tensor(data=action_chosen, dtype=torch.long).to(device=device)
         else:
             action_chosen = dist.sample()
@@ -163,10 +180,4 @@ class SelfPlay:
         print(f"Episode: {episode}")
         print(f"Loss: {loss:.5f}")
 
-        if isinstance(self.all_white_rewards, torch.Tensor):
-            avg_white_rewards = self.all_white_rewards.mean().item()
-            print(f"Avg white rewards: {avg_white_rewards:.5f}")
-
-        if isinstance(self.all_black_rewards, torch.Tensor):
-            avg_black_rewards = self.all_black_rewards.mean().item()
-            print(f"Avg black rewards: {avg_black_rewards:.5f}")
+        self.loss_list.append(float(loss))
