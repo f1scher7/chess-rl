@@ -4,7 +4,7 @@ from backend.config import K_FACTOR
 class ChessEnvUtils:
 
     @staticmethod
-    def get_legal_actions_idx(board):
+    def get_legal_action_idxs(board):
         legal_moves = list(board.legal_moves)
         legal_moves_idx = []
 
