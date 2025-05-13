@@ -1,3 +1,7 @@
+a {
+    cursor: pointer;
+}
+
 .modal-header .btn-close:focus {
     box-shadow: none;
     outline: none;
@@ -9,8 +13,8 @@
 
 .pagination > .active > a {
     color: white;
-    background-color: #495057 !important;
-    border: solid 1px #495057 !important;
+    background-color: #212529 !important;
+    border: solid 1px #212529 !important;
 }
 
 .list-group-item.active {
@@ -18,4 +22,9 @@
     background-color: #212529 !important;
     border: solid 1px #212529 !important;
     border-radius: 5px !important;
+}
+
+.no-hover:hover {
+    background-color: transparent !important;
+    color: inherit !important;
 }
