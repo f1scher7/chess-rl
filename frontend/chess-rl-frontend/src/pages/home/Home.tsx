@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import "./Home.css";
-import FileListDialog from "../../components/fileListDialog/FileListDialog";
-import Footer from "../../components/Footer";
-import { fetchFileList } from "../../api/fetcher";
+import React, { useState } from 'react';
+import './Home.css';
+import FileListDialog from '../../components/fileListDialog/FileListDialog';
+import Footer from '../../components/Footer';
+import { fetchFileList } from '../../api/fetcher';
 
 
 const Home: React.FC = () => {
@@ -14,7 +14,7 @@ const Home: React.FC = () => {
         setPlayGameVsAgent(playGame);
         setShowModal(true);
 
-        const selectedPathType = playGame ? "models" : "games";
+        const selectedPathType = playGame ? 'models' : 'games';
 
         try {
             const data = await fetchFileList(selectedPathType);
@@ -52,9 +52,9 @@ const Home: React.FC = () => {
             </div>
 
             <FileListDialog show={showModal}
-                            playGameVsAgent={playGameVsAgent}
-                            fileList={fileList}
-                            handleClose={handleCloseModal}
+                playGameVsAgent={playGameVsAgent}
+                fileList={fileList}
+                handleClose={handleCloseModal}
             />
         </div>
     );

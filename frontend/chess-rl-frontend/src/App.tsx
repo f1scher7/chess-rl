@@ -1,9 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/home/Home";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/home/Home';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ChessBoardPage from "./pages/chessBoardPage/ChessBoardPage";
+import ChessBoardPage from './pages/chessBoardPage/ChessBoardPage';
 
 
 function App() {
