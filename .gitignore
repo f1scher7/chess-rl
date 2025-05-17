@@ -79,4 +79,4 @@ fabric.properties
 /plans.txt
 /todo.txt
 /backend/scripts/remove/
-**/__pychache__/
+__pychache__/
