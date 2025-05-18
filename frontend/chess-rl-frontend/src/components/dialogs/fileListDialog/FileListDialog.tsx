@@ -5,6 +5,7 @@ import { fetchSavedGameContent } from '../../../api/fetcher';
 import { ChessRlFile } from '../../../models/models';
 import '../../../global.css';
 import './FileListDialog.css';
+import { PieceColor } from '../../../enums';
 
 
 type FileListDialogProps = {
@@ -19,7 +20,7 @@ const FileListDialog: React.FC<FileListDialogProps> = ({ show, playGameVsAgent, 
 
     const [selectedFile, setSelectedFile] = useState<string>('');
     const [currentPage, setCurrentPage] = useState<number>(1);
-    const [selectedColor, setSelectedColor] = useState<string>('white');
+    const [selectedColor, setSelectedColor] = useState<string>(PieceColor.White);
 
     const maxVisiblePages: number = 8;
     const filesPerPage: number = 10;
@@ -126,15 +127,15 @@ const FileListDialog: React.FC<FileListDialogProps> = ({ show, playGameVsAgent, 
                         {playGameVsAgent ? (
                             <div className="d-flex justify-content-center gap-3">
                                 <Button
-                                    variant={selectedColor === 'white' ? 'outline-dark' : ''}
-                                    onClick={() => setSelectedColor('white')}
+                                    variant={selectedColor === PieceColor.White ? 'outline-dark' : ''}
+                                    onClick={() => setSelectedColor(PieceColor.White)}
                                     className="no-hover"
                                 >
                                     White ♘
                                 </Button>
                                 <Button
-                                    variant={selectedColor === 'black' ? 'outline-dark' : ''}
-                                    onClick={() => setSelectedColor('black')}
+                                    variant={selectedColor === PieceColor.Black ? 'outline-dark' : ''}
+                                    onClick={() => setSelectedColor(PieceColor.Black)}
                                     className="no-hover"
                                 >
                                     Black ♞
