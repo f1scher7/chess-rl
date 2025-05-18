@@ -20,7 +20,7 @@ const Home: React.FC = () => {
             const data = await fetchFileList(selectedPathType);
             setFileList(data.file_names);
         } catch (e) {
-            console.log(e);
+            console.error(e);
         }
     };
 

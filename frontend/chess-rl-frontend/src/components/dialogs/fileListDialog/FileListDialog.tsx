@@ -46,7 +46,7 @@ const FileListDialog: React.FC<FileListDialogProps> = ({ show, playGameVsAgent, 
 
                     navigate('/agents-play', { state: { savedGameContent: data } });
                 } catch (e) {
-                    console.log(e);
+                    console.error(e);
                     throw e;
                 }
             }
