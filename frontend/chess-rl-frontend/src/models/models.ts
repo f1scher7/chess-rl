@@ -12,3 +12,7 @@ export type SavedGameContent = {
     result: string;
     moves: string[];
 }
+
+export type Move = {
+    move_str: string,
+}
