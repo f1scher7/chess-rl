@@ -14,7 +14,7 @@ type FileListDialogProps = {
     handleClose: () => void;
 };
 
-const FileListDialog: React.FC<FileListDialogProps> = ({ show, playGameVsAgent, fileList, handleClose }) => {
+const FileListDialog: React.FC<FileListDialogProps> = ({ show, playGameVsAgent, fileList, handleClose }: FileListDialogProps) => {
     const navigate = useNavigate();
 
     const [selectedFile, setSelectedFile] = useState<string>('');
@@ -64,7 +64,11 @@ const FileListDialog: React.FC<FileListDialogProps> = ({ show, playGameVsAgent, 
     }, [show]);
 
     return (
-        <Modal show={show} onHide={handleClose} dialogClassName="no-center">
+        <Modal
+            show={show}
+            onHide={handleClose}
+            dialogClassName="no-center"
+        >
             <Modal.Header closeButton>
                 <Modal.Title>
                     {playGameVsAgent ? 'Choose the agent' : 'Choose the agent\'s game'}

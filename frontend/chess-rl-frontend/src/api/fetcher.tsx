@@ -1,4 +1,4 @@
-import { ChessRlFile, FileList, SavedGameContent } from '../types/types';
+import { ChessRlFile, FileList, SavedGameContent } from '../models/models';
 
 
 const API_URL = process.env.REACT_APP_API_URL;
