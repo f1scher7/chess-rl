@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.models import *
+from backend.chess_agent.vs_human import VsHuman
 from backend.config import SAVED_GAMES_PATH, SAVED_MODELS_PATH
 from backend.utils.utils import Utils
 
@@ -51,3 +52,14 @@ async def get_saved_game(file: str):
         return saved_game_content
     else:
         return SavedGameContent(white_elo='-1', black_elo='-1', result="", moves=[])
+
+
+@app.get("/play-vs-agent", response_model=Move)
+async def load_agent(model_file_name: str, fen: str):
+    model, _ = ModelStore.load_model(model_file_name)
+
+    if model:
+        fen_after_move = Move(move_str=VsHuman.make_move(model=model, fen=fen))
+        return fen_after_move
+    else:
+        return Move(move_str="")
