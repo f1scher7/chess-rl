@@ -25,7 +25,7 @@ class ChessEnv(gym.Env):
 
 
     def step(self, action_no):
-        move = self.decode_action(action_no=action_no)
+        move = self.decode_action(board=self.board, action_no=action_no)
 
         reward_or_penalty = Eval.evaluate_capture_decision(board=self.board, move_played=move)
 
@@ -105,9 +105,10 @@ class ChessEnv(gym.Env):
         return observation
 
 
-    def decode_action(self, action_no):
-        # Decode the number of action to legal chess move e.g. e4, because AI choose only the number of action
-        for move in self.board.legal_moves:
+    @staticmethod
+    def decode_action(board: chess.Board, action_no):
+        # Decode the number of action to legal chess move_str e.g. e4, because AI choose only the number of action
+        for move in board.legal_moves:
             if ChessEnvUtils.get_move_idx(move=move) == action_no:
                 return move
 
