@@ -1,5 +1,4 @@
 EPISODES = 10000  # Number of chess games to play
-BATCH_SIZE = 32
 LEARNING_RATE = 0.0001  # For the RL default value is 0.0001
 
 GAMMA = 1.0  # Discount factor defining how much future rewards have influence on the model
