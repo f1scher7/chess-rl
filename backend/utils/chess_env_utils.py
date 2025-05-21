@@ -17,7 +17,7 @@ class ChessEnvUtils:
     @staticmethod
     def get_offset_move(move):
         if move.promotion:
-            return 225 + (move.promotion - 2)  # move.promotion - 2 = skip pawn
+            return 225 + (move.promotion - 2)  # move_str.promotion - 2 = skip pawn
 
         from_square = move.from_square  # idx of square
         to_square = move.to_square  # idx of square
