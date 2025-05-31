@@ -1,0 +1,13 @@
+.move-list {
+    max-height: 63%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.move-list li {
+    background: none;
+    min-width: 30%;
+    border: none;
+    /*border-bottom: 1px solid #282c34;*/
+    border-radius: 0 !important;
+}
