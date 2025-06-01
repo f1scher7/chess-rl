@@ -6,14 +6,13 @@ class ChessPolicy(nn.Module):
 
     def __init__(self, conv_layers_num, in_channels_list, out_channels_list, kernel_size_list,
                  fc_layers_num, fc_in_features_list, fc_out_features_list,
-                 dropout_probability_conv=0.2, dropout_probability_fc=0.4, actions_num=4672):
+                 dropout_probability_conv=0.1, dropout_probability_fc=0.2):
         super(ChessPolicy, self).__init__()
 
         self.conv_layers_num = conv_layers_num
         self.fc_layers_num = fc_layers_num
         self.dropout_probability_conv = dropout_probability_conv
         self.dropout_probability_fc = dropout_probability_fc
-        self.actions_num = actions_num
 
         self.conv_layers = nn.ModuleList([
             nn.Conv2d(
@@ -49,16 +48,20 @@ class ChessPolicy(nn.Module):
 
     def __initialize_weights(self):
         for conv_layer in self.conv_layers:
-            nn.init.kaiming_uniform_(conv_layer.weight, nonlinearity='relu')  # he
+            nn.init.kaiming_uniform_(tensor=conv_layer.weight, nonlinearity='relu')  # he
 
             if conv_layer.bias is not None:
                 nn.init.zeros_(conv_layer.bias)
 
-        for fc_layer in self.fc_layers:
-            nn.init.kaiming_uniform_(fc_layer.weight, nonlinearity='relu')  # he
-
-            if fc_layer.bias is not None:
+        for i, fc_layer in enumerate(self.fc_layers):
+            if i == len(self.fc_layers) -1:
+                nn.init.orthogonal_(tensor=fc_layer.weight, gain=0.01)
                 nn.init.zeros_(fc_layer.bias)
+            else:
+                nn.init.kaiming_uniform_(tensor=fc_layer.weight, nonlinearity='relu')  # he
+
+                if fc_layer.bias is not None:
+                    nn.init.zeros_(fc_layer.bias)
 
 
     def forward(self, x):
@@ -69,14 +72,13 @@ class ChessPolicy(nn.Module):
             x = F.dropout2d(input=x, p=self.dropout_probability_conv, training=self.training)
 
         x = x.view(x.size(0), -1)
-
-        # Layer norm
         x = self.layer_norm(x)
 
-        for fc_layer in self.fc_layers:
+        for i, fc_layer in enumerate(self.fc_layers[:-1]):
             x = F.relu(fc_layer(x))
             x = F.dropout(input=x, p=self.dropout_probability_fc, training=self.training)
 
-        x = F.softmax(x, dim=-1)
+        # Last FC layer
+        x = self.fc_layers[-1](x)
 
         return x
