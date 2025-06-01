@@ -1,3 +1,5 @@
+import chess
+
 from backend.config import K_FACTOR
 
 
@@ -44,14 +46,14 @@ class ChessEnvUtils:
 
 
     @staticmethod
-    def update_elo(winner_color, white_elo, black_elo):
+    def update_elo(winner, white_elo, black_elo):
         expected_score_white = 1 / (1 + 10 ** ((black_elo - white_elo) / 400))  # chance of winning
         expected_score_black = 1 / (1 + 10 ** ((white_elo - black_elo) / 400))  # chance of winning
 
-        if winner_color == 'white':
+        if winner == chess.WHITE:
             white_elo += K_FACTOR * (1 - expected_score_white)
             black_elo += K_FACTOR * (0 - expected_score_black)
-        elif winner_color == 'black':
+        elif winner == chess.BLACK:
             black_elo += K_FACTOR * (1 - expected_score_black)
             white_elo += K_FACTOR * (0 - expected_score_white)
         else:
