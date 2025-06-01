@@ -5,9 +5,9 @@ import chess.pgn
 import matplotlib.pyplot as plt
 from datetime import datetime
 from io import StringIO
-from backend.chess_agent.agent_config import UPDATE_FREQUENCY, EPISODES, LEARNING_RATE
 from backend.chess_agent.policy import ChessPolicy
-from backend.config import SAVED_MODELS_PATH
+from backend.chess_agent.agent_config import UPDATE_FREQUENCY, EPISODES, LEARNING_RATE, GAMMA, EPSILON
+from backend.config import SAVED_MODELS_PATH, SAVED_GRAPHS_PATH, TERMINAL_BONUS, CASTLING_BONUS, EVAL_SCALING_FACTOR
 
 
 class Utils:
@@ -18,23 +18,22 @@ class Utils:
 
 
     @staticmethod
-    def save_model(model, optimizer):
+    def save_model(model, optimizer, episodes):
         # filename = f"chess-rl-by-f1scher7-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
-        filename = f"chess-rl-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
-        final_path = SAVED_MODELS_PATH + filename
+        filename = f"chess-rl-model-episodes{episodes}-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
+        final_path = os.path.join(SAVED_MODELS_PATH, filename)
 
         torch.save({
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
         }, final_path)
 
-        print(f"Model was saved: {final_path}")
+        print(f"Model was saved to: {final_path}")
 
 
     @staticmethod
     def load_model(model, optimizer, file_name):
         path = os.path.join(SAVED_MODELS_PATH, file_name)
-
         checkpoint = torch.load(path)
 
         if model and 'model_state_dict' in checkpoint:
@@ -71,12 +70,12 @@ class Utils:
             pgn_text = f.read()
 
         pgn_io = StringIO(pgn_text)
-
         game = chess.pgn.read_game(pgn_io)
 
         white_elo = game.headers["white_elo"].split('.')[0]
         black_elo = game.headers["black_elo"].split('.')[0]
         result = game.headers["result"]
+
         moves = []
 
         for move in game.mainline_moves():
@@ -87,12 +86,32 @@ class Utils:
 
 
     @staticmethod
-    def plot_loss(loss_list):
+    def plot_loss(loss_list, mode):
         episode_list = [i for i in range(UPDATE_FREQUENCY, EPISODES + 1, UPDATE_FREQUENCY)]
 
-        plt.plot(episode_list, loss_list, label="Loss")
-        plt.title("Training Loss")
-        plt.xlabel("Episodes")
-        plt.ylabel("Loss")
-        plt.legend()
+        main_title = "Training Loss"
+        training_params = f"Training: Episodes={EPISODES} • LR={LEARNING_RATE} • γ={GAMMA}"
+        exploration_params = f"Exploration: ε={EPSILON} • Update Freq={UPDATE_FREQUENCY}"
+        reward_params = f"Rewards: Terminal={TERMINAL_BONUS} • Castling={CASTLING_BONUS} • Eval Scale={EVAL_SCALING_FACTOR}"
+
+        file_name = f"{mode}_loss-graph_{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}"
+        final_path = os.path.join(SAVED_GRAPHS_PATH, file_name)
+
+        plt.figure(figsize=(14, 10))
+        plt.plot(episode_list, loss_list, label="Loss", linewidth=2)
+
+        plt.suptitle(main_title, fontsize=16, fontweight='bold', y=0.95)
+        plt.figtext(0.5, 0.90, training_params, ha='center', fontsize=11, style='italic')
+        plt.figtext(0.5, 0.87, exploration_params, ha='center', fontsize=11, style='italic')
+        plt.figtext(0.5, 0.84, reward_params, ha='center', fontsize=11, style='italic')
+
+        plt.xlabel("Episodes", fontsize=12)
+        plt.ylabel("Loss", fontsize=12)
+        plt.legend(fontsize=11)
+        plt.grid(True, alpha=0.3)
+        plt.subplots_adjust(top=0.80)
+
+        plt.savefig(final_path, dpi=300, bbox_inches='tight')
+        print(f"Loss graph was saved to: {final_path}")
+
         plt.show()
