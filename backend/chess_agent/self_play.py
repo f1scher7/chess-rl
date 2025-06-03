@@ -1,7 +1,7 @@
+import chess
 import torch
 import numpy as np
 from torch.distributions import Categorical
-
 from backend.chess_agent.agent_config import *
 from backend.utils.chess_env_utils import ChessEnvUtils
 from backend.utils.utils import Utils
@@ -18,43 +18,58 @@ class SelfPlay:
         self.all_black_rewards = []
         self.loss_list = []
 
+        self.white_wins = 0
+        self.black_wins = 0
+        self.draws = 0
+
+        self.save_game = False
+
 
     def train(self, env, model, optimizer, init_episode=1, model_save=True):
+        curr_episode = 0
         interrupted = False
 
         try:
             for episode in range (init_episode, EPISODES + 1):
-                self.collect_episode(env=env, model=model)
+                curr_episode = episode
 
-                print(f"Avg eval score per episode: {sum(env.eval_score_list) / len(env.eval_score_list)}")
+                self.collect_episode(env=env, model=model)
+                self.log_training_info(episode=episode, eval_score_list=env.eval_score_list, loss=None)
 
                 if episode % UPDATE_FREQUENCY == 0:
                     self.compute_discounted_rewards()
 
-                    loss = self.update_model(optimizer=optimizer)
+                    loss = self.update_model(model=model, optimizer=optimizer)
 
                     print("Model was updated!")
-                    self.log_training_info(episode=episode, loss=loss)
-                    env.save_game_pgn(episode=episode)
-                    print("=" * 40)
+                    self.log_training_info(episode=episode, eval_score_list=None, loss=loss)
+                    print("=" * 50)
 
                     self.reset_probs_and_rewards()
+
+                if self.save_game:
+                    env.save_game_pgn(episode=episode)
+
         except KeyboardInterrupt:
             if model_save:
                 interrupted = True
                 print("Training interrupted! Saving model...")
-                Utils.save_model(model=model, optimizer=optimizer)
+                Utils.save_model(model=model, optimizer=optimizer, episodes=curr_episode)
         finally:
             if model_save and not interrupted:
-                Utils.save_model(model=model, optimizer=optimizer)
+                Utils.save_model(model=model, optimizer=optimizer, episodes=curr_episode)
 
-            Utils.plot_loss(loss_list=self.loss_list)
+            print(f"White wins: {self.white_wins}; Black wins: {self.black_wins}; Draws: {self.draws};")
+            Utils.plot_loss(loss_list=self.loss_list, mode="self-play")
 
 
-    def update_model(self, optimizer):
+    def update_model(self, model, optimizer):
         optimizer.zero_grad()
         loss = self.compute_loss()
         loss.backward()  # gradients calculation
+
+        torch.nn.utils.clip_grad_norm_(parameters=model.parameters(), max_norm=1.0)
+
         optimizer.step()  # weights and biases update
 
         return loss
@@ -65,45 +80,41 @@ class SelfPlay:
         black_log_probs = torch.stack(self.all_black_log_probs)
 
         if not isinstance(self.all_white_rewards, torch.Tensor):
-            self.all_white_rewards = torch.tensor(data=self.all_white_rewards, dtype=torch.float32).to(device=self.device).to(device=self.device)
+            self.all_white_rewards = torch.tensor(data=self.all_white_rewards, dtype=torch.float32).to(device=self.device)
 
         if not isinstance(self.all_black_rewards, torch.Tensor):
-            self.all_white_rewards = torch.tensor(data=self.all_black_rewards, dtype=torch.float32).to(device=self.device).to(device=self.device)
+            self.all_black_rewards = torch.tensor(data=self.all_black_rewards, dtype=torch.float32).to(device=self.device)
 
-        white_loss = -(white_log_probs * self.all_white_rewards).sum()
-        black_loss = -(black_log_probs * self.all_black_rewards).sum()
+        white_rew_std = self.all_white_rewards.std() + 1e-8
+        black_rew_std = self.all_black_rewards.std() + 1e-8
+
+        white_rew_norm = self.all_white_rewards / white_rew_std
+        black_rew_norm = self.all_black_rewards / black_rew_std
+
+        white_loss = -(white_log_probs * white_rew_norm).mean()
+        black_loss = -(black_log_probs * black_rew_norm).mean()
+
+        # print(f"LOSS DEBUG: White log_probs range: [{white_log_probs.min():.4f}, {white_log_probs.max():.4f}]")
+        # print(f"LOSS DEBUG: Black log_probs range: [{black_log_probs.min():.4f}, {black_log_probs.max():.4f}]")
 
         return white_loss + black_loss
 
 
     def collect_episode(self, env, model):
         observation, info = env.reset()
-        white_reward = 0
-        black_reward = 0
-
-        white_log_prob = None
-        black_log_prob = None
 
         done = False
 
         while not done:
-            observation, white_reward, black_reward, done, info, log_prob = SelfPlay.make_step(env=env, model=model, observation=observation, device=self.device)
+            curr_turn = env.board.turn
+            observation, white_reward, black_reward, done, info, log_prob = self.make_step(env=env, model=model, observation=observation, device=self.device)
 
-            if env.board.turn:
+            if curr_turn == chess.WHITE:
                 self.all_white_rewards.append(white_reward)
                 self.all_white_log_probs.append(log_prob)
-                white_log_prob = log_prob
             else:
                 self.all_black_rewards.append(black_reward)
                 self.all_black_log_probs.append(log_prob)
-                black_log_prob = log_prob
-
-        if black_log_prob and white_log_prob:
-            self.all_white_log_probs.append(white_log_prob)
-            self.all_black_log_probs.append(black_log_prob)
-
-        self.all_white_rewards.append(white_reward)
-        self.all_black_rewards.append(black_reward)
 
 
     def compute_discounted_rewards(self):
@@ -121,50 +132,45 @@ class SelfPlay:
             black_cumulative_rewards = reward + GAMMA * black_cumulative_rewards
             black_discounted_rewards.insert(0, black_cumulative_rewards)
 
-        norm_white_discounted_rewards = SelfPlay.normalize_rewards(white_discounted_rewards)
-        norm_black_discounted_rewards = SelfPlay.normalize_rewards(black_discounted_rewards)
-
-        self.all_white_rewards = torch.tensor(data=norm_white_discounted_rewards, dtype=torch.float32).to(device=self.device)
-        self.all_black_rewards = torch.tensor(data=norm_black_discounted_rewards, dtype=torch.float32).to(device=self.device)
+        self.all_white_rewards = torch.tensor(data=white_discounted_rewards, dtype=torch.float32).to(device=self.device)
+        self.all_black_rewards = torch.tensor(data=black_discounted_rewards, dtype=torch.float32).to(device=self.device)
 
 
-    @staticmethod
-    def normalize_rewards(rewards):
-        """
-        Z-score normalization (rescale data to have 0 mean)
-        """
-        rewards_np = np.array(rewards, dtype=np.float32)
-        mean = rewards_np.mean()
-        std = rewards_np.std() + 1e-8
-
-        return (rewards_np - mean) / std
-
-
-    @staticmethod
-    def make_step(env, model, observation, device):
+    def make_step(self, env, model, observation, device):
         # observation_tensor = (batch_size = 1, channels, height, width)
         observation_tensor = torch.tensor(data=observation, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0).to(device=device)
 
-        probabilities = model(observation_tensor)
+        logits = model(observation_tensor)
         legal_action_idxs = ChessEnvUtils.get_legal_action_idxs(env.board)
 
-        mask = torch.zeros_like(probabilities)
-        mask[0, legal_action_idxs] = 1.0
-        masked_probs = mask * probabilities
-        masked_probs_norm = masked_probs / masked_probs.sum()
+        mask = torch.full_like(input=logits, fill_value=float('-inf'))
+        mask[0, legal_action_idxs] = 0.0
+        masked_logits = logits + mask
 
-        dist = Categorical(masked_probs_norm)  # discrete distribution
+        probs = torch.softmax(input=masked_logits, dim=1)
+        dist = Categorical(probs=probs)  # discrete distribution
 
-        if np.random.rand() < EPSILON or masked_probs.sum() == 0:
-            random_idx = torch.randint(len(legal_action_idxs), (1,)).item()
-            action_chosen = legal_action_idxs[random_idx]
-            action_chosen = torch.tensor(data=action_chosen, dtype=torch.long).to(device=device)
+        if np.random.rand() < EPSILON:
+            action_chosen = int(np.random.choice(legal_action_idxs))
+            action_chosen_tensor = torch.tensor(data=action_chosen, dtype=torch.long, device=logits.device)
+            log_prob = torch.log(torch.tensor(data=(1.0 / len(legal_action_idxs)), dtype=torch.float32, device=logits.device)).unsqueeze(0)
         else:
-            action_chosen = dist.sample()
+            sampled_tensor = dist.sample()
+            action_chosen_tensor = sampled_tensor
+            log_prob = dist.log_prob(action_chosen_tensor)
 
-        log_prob = dist.log_prob(action_chosen)
+        observation, (white_reward, black_reward), done, info = env.step(action_chosen_tensor.item())
+        winner = info.get('winner')
 
-        observation, (white_reward, black_reward), done, info = env.step(action_chosen.item())
+        if winner == chess.WHITE:
+            self.white_wins += 1
+            self.save_game = True
+        elif winner == chess.BLACK:
+            self.black_wins += 1
+            self.save_game = True
+        elif winner is None:
+            self.draws += 1
+            self.save_game = False
 
         return observation, white_reward, black_reward, done, info, log_prob
 
@@ -176,8 +182,18 @@ class SelfPlay:
         self.all_black_rewards = []
 
 
-    def log_training_info(self, episode, loss):
-        print(f"Episode: {episode}")
-        print(f"Loss: {loss:.5f}")
+    def log_training_info(self, episode, eval_score_list, loss):
+        if eval_score_list is not None:
+            avg_eval = sum(eval_score_list) / len(eval_score_list)
+            eval_std = np.std(eval_score_list)
+            eval_range = (min(eval_score_list), max(eval_score_list))
 
-        self.loss_list.append(float(loss))
+            print(f"Eval Score - Avg: {avg_eval:.3f}, Std: {eval_std:.3f}, Range: [{eval_range[0]:.1f}, {eval_range[1]:.1f}]")
+
+            if eval_std < 0.1:
+                print("WARNING: Model stuck - very low eval variance!")
+        else:
+            self.loss_list.append(float(loss))
+
+            print(f"Episode: {episode}")
+            print(f"Loss: {loss:.5f}")
