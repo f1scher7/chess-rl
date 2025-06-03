@@ -5,7 +5,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from backend.chess_env.eval import Eval
-from backend.config import WHITE_ELO, BLACK_ELO, TERMINAL_BONUS, SAVED_GAMES_PATH, MAX_MOVES_PER_EPISODE
+from backend.config import *
 from backend.utils.chess_env_utils import ChessEnvUtils
 
 
@@ -18,66 +18,70 @@ class ChessEnv(gym.Env):
         self.white_elo = WHITE_ELO
         self.black_elo = BLACK_ELO
 
-        self.action_space = spaces.Discrete(4672)  # all possible moves for each piece
+        self.action_space = spaces.Discrete(ACTION_SPACE)  # all possible moves for each piece
         self.observation_space = spaces.Box(0, 1, shape=(8, 8, 12), dtype=np.float32)  # 12 = all white pieces [0:6] and black pieces [6:12]
 
+        self.eval = Eval(board=self.board)
         self.eval_score_list = []
 
 
     def step(self, action_no):
+        curr_player = self.board.turn
+
         move = self.decode_action(board=self.board, action_no=action_no)
 
-        reward_or_penalty = Eval.evaluate_capture_decision(board=self.board, move_played=move)
+        self.eval.board = self.board
+        capture_reward_or_penalty = self.eval.evaluate_capture_decision(move_played=move) / EVAL_SCALING_FACTOR
 
         self.board.push(move)
 
         observation = self.get_observation(board=self.board)
-        white_reward, black_reward, done = self.get_reward()
-        info = {'board_fen': self.board.fen()}
+        white_reward, black_reward, done, winner = self.get_reward()
+        info = {
+            'board_fen': self.board.fen(),
+            'winner': winner,
+        }
 
-        return observation, (white_reward + reward_or_penalty, black_reward + reward_or_penalty), done, info
+        if curr_player == chess.WHITE:
+            white_reward += capture_reward_or_penalty
+        else:
+            black_reward += capture_reward_or_penalty
+
+        return observation, (white_reward, black_reward), done, info
 
 
     def get_reward(self):
         if self.board.is_checkmate():
-            winner_color = 'white' if self.board.turn == chess.BLACK else 'black'
+            winner = not self.board.turn
 
-            if winner_color == 'white':
+            if winner == chess.WHITE:
                 white_reward, black_reward = TERMINAL_BONUS, -TERMINAL_BONUS
             else:
                 white_reward, black_reward = -TERMINAL_BONUS, TERMINAL_BONUS
 
-            self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner_color=winner_color, white_elo=self.white_elo, black_elo=self.black_elo)
+            self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner=winner, white_elo=self.white_elo, black_elo=self.black_elo)
 
-            return white_reward, black_reward, True
-        elif self.board.is_stalemate() or self.board.is_insufficient_material() or self.board.can_claim_threefold_repetition() or self.board.is_fivefold_repetition():
-            self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner_color='draw', white_elo=self.white_elo, black_elo=self.black_elo)
-            return 0, 0, True
+            return white_reward, black_reward, True, winner
+        elif (self.board.is_stalemate() or self.board.is_insufficient_material() or
+              self.board.can_claim_threefold_repetition() or self.board.is_fivefold_repetition() or
+              len(self.board.move_stack) > MAX_MOVES_PER_EPISODE):
+            self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner=None, white_elo=self.white_elo, black_elo=self.black_elo)
+            return 0, 0, True, None
 
-        eval_score = Eval.evaluate_board(self.board)
+        self.eval.board = self.board
+        raw_eval_score = self.eval.evaluate_board()
+        eval_score = np.tanh(raw_eval_score / EVAL_SCALING_FACTOR) * 0.8
 
-        if self.board.turn == chess.WHITE:
-            white_reward = eval_score
-            black_reward = -eval_score
-        else:
-            white_reward = -eval_score
-            black_reward = eval_score
+        # if len(self.eval_score_list) < 50:
+        #     print(f"DEBUG: Raw eval = {raw_eval_score:.2f}, EVAL_SCALING_FACTOR = {EVAL_SCALING_FACTOR}")
+        #     print(f"DEBUG: tanh({raw_eval_score}/{EVAL_SCALING_FACTOR}) = {np.tanh(raw_eval_score / EVAL_SCALING_FACTOR):.6f}")
+
+        white_reward = eval_score
+        black_reward = -eval_score
 
         self.eval_score_list.append(eval_score)
 
-        if len(self.board.move_stack) > MAX_MOVES_PER_EPISODE:
-            self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner_color='draw', white_elo=self.white_elo, black_elo=self.black_elo)
-
-            if eval_score > 1:
-                white_reward -= TERMINAL_BONUS
-            elif eval_score < -1:
-                black_reward -= TERMINAL_BONUS
-
-            return white_reward, black_reward, True
-
-
-        return white_reward, black_reward, False
-
+        return white_reward, black_reward, False, -1
 
 
     @staticmethod
@@ -117,7 +121,7 @@ class ChessEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         self.board.reset()
-        Eval.reset_castling_rewards()
+        self.eval.reset_castling_rewards()
         self.eval_score_list = []
         return self.get_observation(board=self.board), {}  # we should also return info dict but for now its empty :D
 
@@ -127,7 +131,7 @@ class ChessEnv(gym.Env):
         self.black_elo = 300
 
 
-    def save_game_pgn(self, episode, event_name="Self-play", mode_name="self-play-train"):
+    def save_game_pgn(self, episode, event_name="self-play", mode_name="self-play-train"):
         game = chess.pgn.Game.from_board(board=self.board)
         game.headers["event"] = event_name
         game.headers["white_elo"] = str(self.white_elo)
