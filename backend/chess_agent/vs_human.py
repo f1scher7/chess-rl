@@ -16,15 +16,16 @@ class VsHuman:
 
         observation_tensor = torch.tensor(data=observation, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0).to(device=Utils.get_device())
 
-        probabilities = model(observation_tensor)
+        logits = model(observation_tensor)
         legal_action_idxs = ChessEnvUtils.get_legal_action_idxs(board)
 
-        mask = torch.zeros_like(probabilities)
-        mask[0, legal_action_idxs] = 1.0
-        masked_probs = mask * probabilities
-        masked_probs_norm = masked_probs / masked_probs.sum()
+        mask = torch.full_like(input=logits, fill_value=float('-inf'))
+        mask[0, legal_action_idxs] = 0.0
+        masked_logits = mask + logits
 
-        dist = Categorical(masked_probs_norm)  # discrete distribution
+        probs = torch.softmax(input=masked_logits, dim=1)
+
+        dist = Categorical(probs)  # discrete distribution
         action_chosen = dist.sample()
 
         move = ChessEnv.decode_action(board=board, action_no=action_chosen)
