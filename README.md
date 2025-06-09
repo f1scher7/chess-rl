@@ -1,6 +1,7 @@
 # ChessRl
 ChessRl is the self-play AI which learns to play chess through reinforcement learnig 
 
-![image](https://github.com/user-attachments/assets/81016973-adbe-4b0a-9b6f-47df705fa4e4)
+![image](https://github.com/user-attachments/assets/ca8efbc9-83b7-4a26-a38f-3c0abe391343)
 
-![image](https://github.com/user-attachments/assets/c816c000-7cee-4277-9c55-e39731d055de)
+![image](https://github.com/user-attachments/assets/0e8e8404-56a0-42f4-8134-47a2937d03c6)
+
