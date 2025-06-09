@@ -5,7 +5,7 @@ import { Chessboard } from 'react-chessboard';
 import { SavedGameContent } from '../../models/models';
 import '../../global.css';
 import './ChessBoardPage.css';
-import { generateGroupedMoves, retrieveEpisodesNumFromModelFileName } from '../../utils/utils';
+import { generateGroupedMoves, retrieveEpisodeNumFromModelFileName } from '../../utils/utils';
 import { isGameOver, onDrop, resetBoard } from '../../services/chessService';
 import GameOverDialog from '../../components/dialogs/gameOverDialog';
 import { GameOverResultText, PieceColor } from '../../enums';
@@ -35,7 +35,7 @@ const ChessBoardPage: React.FC<ChessBoardPageProps> = ({ isView }: ChessBoardPag
     const [gameResultText, setGameResultText] = useState<string>('');
     const [showGameOverDialog, setShowGameOverDialog] = useState<boolean>(false);
 
-    const episodesPlayedByAgent: string = retrieveEpisodesNumFromModelFileName(modelFileName, isView);
+    const episodesPlayedByAgent: string = retrieveEpisodeNumFromModelFileName(modelFileName, isView);
 
     const incrMoveIdx = (isArrowListener: boolean): void => {
         if (currMoveIdx === -1) {

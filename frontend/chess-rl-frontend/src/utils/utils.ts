@@ -1,4 +1,4 @@
-export function retrieveEpisodesNumFromModelFileName(filename: string | undefined, isView: boolean): string {
+export function retrieveEpisodeNumFromModelFileName(filename: string | undefined, isView: boolean): string {
     if (filename && !isView) {
         const match: RegExpMatchArray | null = filename?.match(/episodes(\d+)/);
         if (match) {
