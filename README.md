@@ -12,7 +12,7 @@ ChessRl is the self-play Agent which learns to play chess through reinforcement 
 - React v19 (nvm v24.0.2)
 
 
-## Basic Agent Model for a 4GB VRAM GPU
+## Agent Models
 
 * 4GB VRAM GPU
     ```
