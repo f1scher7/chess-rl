@@ -32,8 +32,8 @@ ChessRl is the self-play Agent which learns to play chess through reinforcement 
 
 ### Agent Training (Self Play)
 
-#### General config: backend/config.py 
-#### Agent config: backend/chess_agent/agent_config.py
+##### General config: backend/config.py 
+##### Agent config: backend/chess_agent/agent_config.py
 
 * Install packages 
     ```
