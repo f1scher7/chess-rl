@@ -25,12 +25,12 @@ class SelfPlay:
         self.save_game = False
 
 
-    def train(self, env, model, optimizer, init_episode=1, model_save=True):
+    def train(self, env, model, optimizer, model_save=True):
         curr_episode = 0
         interrupted = False
 
         try:
-            for episode in range (init_episode, EPISODES + 1):
+            for episode in range (INIT_EPISODE, EPISODES + 1):
                 curr_episode = episode
 
                 self.collect_episode(env=env, model=model)

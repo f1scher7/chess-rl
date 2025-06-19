@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from io import StringIO
 from backend.chess_agent.policy import ChessPolicy
-from backend.chess_agent.agent_config import UPDATE_FREQUENCY, EPISODES, LEARNING_RATE, GAMMA, EPSILON
+from backend.chess_agent.agent_config import UPDATE_FREQUENCY, EPISODES, LEARNING_RATE, GAMMA, EPSILON, INIT_EPISODE
 from backend.config import SAVED_MODELS_PATH, SAVED_GRAPHS_PATH, TERMINAL_BONUS, CASTLING_BONUS, EVAL_SCALING_FACTOR
 
 
@@ -33,7 +33,7 @@ class Utils:
 
     @staticmethod
     def load_model(model, optimizer, file_name):
-        path = os.path.join(SAVED_MODELS_PATH, file_name)
+        path = str(os.path.join(SAVED_MODELS_PATH, file_name))
         checkpoint = torch.load(path)
 
         if model and 'model_state_dict' in checkpoint:
@@ -87,7 +87,8 @@ class Utils:
 
     @staticmethod
     def plot_loss(loss_list, mode):
-        episode_list = [i for i in range(UPDATE_FREQUENCY, EPISODES + 1, UPDATE_FREQUENCY)]
+        episodes = EPISODES if EPISODES % 2 == 0 else EPISODES - 1
+        episode_list = [i for i in range(INIT_EPISODE - 1, episodes, UPDATE_FREQUENCY)]
 
         main_title = "Training Loss"
         training_params = f"Training: Episodes={EPISODES} • LR={LEARNING_RATE} • γ={GAMMA}"
