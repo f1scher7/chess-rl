@@ -1,0 +1,13 @@
+[Event "?"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[event "self-play"]
+[white_elo "696.2351537363838"]
+[black_elo "703.7648462636159"]
+[result "1-0"]
+
+1. h3 b5 2. Nf3 d6 3. g4 b4 4. c4 Nd7 5. Nh2 Nb8 6. c5 Bf5 7. f3 Bc2 8. Qxc2 Qc8 9. Kf2 Qf5 10. Ke1 Kd7 11. Qc4 Qe6 12. Qc3 Qxg4 13. Qxg7 Nc6 14. Qxh7 b3 15. Qd3 Re8 16. Qe4 Ra8 17. a3 Re8 18. Qd3 Ra8 19. Qc4 Ne5 20. Qc3 Re8 21. Qc2 Ra8 22. Qc4 Re8 23. Qc3 Ra8 24. Nxg4 Bh6 25. Ne3 Re8 26. Ng2 Ra8 27. Nf4 Re8 28. Qb4 Ra8 29. Qb5+ Nc6 30. Qxc6+ Kxc6 31. Kf2 Re8 32. Ke1 Ra8 33. Kf2 Re8 34. Nd5 dxc5 35. Ndc3 Bxd2 36. Nd1 Ra8 37. Nxd2 Re8 38. Ke1 Nh6 39. Nf2 Ra8 40. Nfe4 Rae8 41. h4 Ra8 42. Nf2 Rae8 43. Ng4 Ra8 44. Ne3 Rae8 45. Ng4 Ra8 46. Ne3 Ng4 47. Nf5 Ne3 48. f4 Nxf5 49. Kf2 Rae8 50. Nxb3 Ra8 51. Nd4+ Kd7 52. Ke1 Rae8 53. Be3 Ra8 54. Nxf5 Ke6 55. Bd4 Rae8 56. Nxe7 Ra8 57. Bc3 Rac8 58. Bg7 Rce8 59. Bd4 Ra8 60. Nc8 Kd7 61. Bg1 Rf8 62. Bh2 Re8 63. Bg1 Rd8 64. Bh2 Kxc8 65. Ra2 Kb8 66. Bg1 Rd7 67. Bh2 Rd3 68. e4 Rd4 69. Ke2 Rxe4+ 70. Kd1 a6 71. Bg1 Re8 72. Bh2 Re4 73. Bg3 Re8 74. Bxa6 Re4 75. Re1 Re8 76. Rh1 Ra7 77. Re1 Re4 78. Rxe4 c4 79. Re8# 1-0

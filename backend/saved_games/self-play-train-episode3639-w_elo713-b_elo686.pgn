@@ -1,0 +1,13 @@
+[Event "?"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "1-0"]
+[event "self-play"]
+[white_elo "713.895404150826"]
+[black_elo "686.1045958491749"]
+[result "1-0"]
+
+1. f4 Na6 2. Nh3 g6 3. Ng5 Bg7 4. Nxf7 Bc3 5. Nh6 Bxb2 6. Rg1 Bxa1 7. Nxg8 Kf8 8. Nxe7 Kg7 9. Nd5 Kh6 10. Nxc7 Nxc7 11. c3 Na6 12. a3 Qc7 13. c4 Qd6 14. c5 Qb6 15. Nc3 Kg7 16. Nd5 Rf8 17. Nc7 Rh8 18. Nxa6 Kf7 19. cxb6 Kg8 20. bxa7 Rb8 21. axb8=B Be5 22. Bd6 Bf6 23. Be5 Bg5 24. Qa4 Bh6 25. Bc7 Bg7 26. Bd6 Bf8 27. Qb5 Bg7 28. Qc4# 1-0
