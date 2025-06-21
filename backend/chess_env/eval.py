@@ -49,29 +49,32 @@ class Eval:
 
 
     def evaluate_threats(self):
+        def push_square_to_list(legal_moves_f, from_sq_f, to_sq_f, list_f):
+            move_f = chess.Move(from_square=from_sq_f, to_square=to_sq_f)
+
+            if move_f in legal_moves_f:
+                board_copy_f = self.board.copy()
+                board_copy_f.push(move_f)
+
+                if not board_copy_f.is_check():
+                    list_f.append(from_sq_f)
+
+            return list_f
+
         evaluation = 0
         legal_moves = set(self.board.legal_moves)
 
-        for square, piece in self.board.piece_map().items():
-            sign = 1 if self.board.piece_at(square).color == chess.WHITE else -1
+        for to_sq, piece in self.board.piece_map().items():
+            sign = 1 if self.board.piece_at(to_sq).color == chess.WHITE else -1
 
             attackers = []
-            for sq in self.board.attackers(not piece.color, square):
-                move = chess.Move(from_square=sq, to_square=square)
-                if move in legal_moves:
-                    board_copy = self.board.copy()
-                    board_copy.push(move)
-                    if not board_copy.is_check():
-                        attackers.append(sq)
+            for from_sq in self.board.attackers(not piece.color, to_sq):
+                attackers = push_square_to_list(legal_moves_f=legal_moves, from_sq_f=from_sq, to_sq_f=to_sq, list_f=attackers)
 
             defenders = []
-            for sq in self.board.attackers(piece.color, square):
-                move = chess.Move(from_square=sq, to_square=square)
-                if move in legal_moves:
-                    board_copy = self.board.copy()
-                    board_copy.push(move)
-                    if not board_copy.is_check():
-                        defenders.append(sq)
+            for from_sq in self.board.attackers(piece.color, to_sq):
+                defenders = push_square_to_list(legal_moves_f=legal_moves, from_sq_f=from_sq, to_sq_f=to_sq, list_f=attackers)
+
 
             if not attackers:
                 continue
