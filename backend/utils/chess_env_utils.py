@@ -1,5 +1,4 @@
 import chess
-
 from backend.config import K_FACTOR
 
 

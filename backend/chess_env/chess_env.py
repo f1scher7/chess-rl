@@ -1,4 +1,3 @@
-import os
 import chess
 import chess.pgn
 import gymnasium as gym
@@ -62,9 +61,7 @@ class ChessEnv(gym.Env):
             self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner=winner, white_elo=self.white_elo, black_elo=self.black_elo)
 
             return white_reward, black_reward, True, winner
-        elif (self.board.is_stalemate() or self.board.is_insufficient_material() or
-              self.board.can_claim_threefold_repetition() or self.board.is_fivefold_repetition() or
-              len(self.board.move_stack) > MAX_MOVES_PER_EPISODE):
+        elif self.is_draw():
             self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner=None, white_elo=self.white_elo, black_elo=self.black_elo)
             return 0, 0, True, None
 
@@ -119,16 +116,17 @@ class ChessEnv(gym.Env):
         return None
 
 
+    def is_draw(self):
+        return (self.board.is_stalemate() or self.board.is_insufficient_material()
+                or self.board.can_claim_threefold_repetition() or self.board.is_fivefold_repetition()
+                or len(self.board.move_stack) > MAX_MOVES_PER_EPISODE)
+
+
     def reset(self, seed=None, options=None):
         self.board.reset()
         self.eval.reset_castling_rewards()
         self.eval_score_list = []
         return self.get_observation(board=self.board), {}  # we should also return info dict but for now its empty :D
-
-
-    def reset_elo(self):
-        self.white_elo = 300
-        self.black_elo = 300
 
 
     def save_game_pgn(self, episode, event_name="self-play", mode_name="self-play-train"):
