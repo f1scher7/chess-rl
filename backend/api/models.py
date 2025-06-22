@@ -1,7 +1,9 @@
 from enum import Enum
 from pydantic import BaseModel
-from typing import List
 from cachetools import LRUCache
+from typing import List, Tuple
+from torch.optim import Optimizer
+from backend.chess_agent.policy import CnnPlusFc
 from backend.utils.utils import Utils
 
 
@@ -30,13 +32,20 @@ class Move(BaseModel):
 
 
 class ModelStore:
-    _cache = LRUCache(maxsize=7)
+
+    _cache: LRUCache[str, Tuple[CnnPlusFc, Optimizer]] = LRUCache(maxsize=7)
+
 
     @classmethod
-    def load_model(cls, model_name):
+    def load_model(cls, model_name: str) -> Tuple[CnnPlusFc, Optimizer]:
         if model_name not in cls._cache:
             model, optimizer = Utils.create_default_model_and_optimizer()
             Utils.load_model(model=model, optimizer=optimizer, file_name=model_name)
             cls._cache[model_name] = (model, optimizer)
 
         return cls._cache[model_name]
+
+
+    @classmethod
+    def clear_cache(cls):
+        cls._cache.clear()
