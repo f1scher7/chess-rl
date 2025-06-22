@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.models import *
 from backend.chess_agent.vs_human import VsHuman
-from backend.config import SAVED_GAMES_PATH, SAVED_MODELS_PATH
+from backend.configs.path_config import PathConfig
 from backend.utils.utils import Utils
 
 
@@ -24,10 +24,10 @@ app.add_middleware(
 
 
 @app.get("/file-list", response_model=FileList)
-async def get_file_list(path_type: PathType):
+async def get_file_list(path_type: PathType) -> FileList:
     path_map = {
-        PathType.games: SAVED_GAMES_PATH,
-        PathType.models: SAVED_MODELS_PATH
+        PathType.games: PathConfig.SAVED_GAMES_PATH_BASE,
+        PathType.models: PathConfig.SAVED_MODELS_PATH_BASE
     }
 
     path = path_map.get(path_type, "")
@@ -44,8 +44,8 @@ async def get_file_list(path_type: PathType):
 
 
 @app.get("/saved-game", response_model=SavedGameContent)
-async def get_saved_game(file: str):
-    file_path = os.path.join(SAVED_GAMES_PATH, file)
+async def get_saved_game(file: str) -> SavedGameContent:
+    file_path = os.path.join(PathConfig.SAVED_GAMES_PATH_BASE, file)
 
     if os.path.isfile(file_path):
         saved_game_content = Utils.extract_data_from_pgn(file=file_path)
@@ -55,7 +55,7 @@ async def get_saved_game(file: str):
 
 
 @app.get("/play-vs-agent", response_model=Move)
-async def load_agent(model_file_name: str, fen: str):
+async def load_agent(model_file_name: str, fen: str) -> Move:
     model, _ = ModelStore.load_model(model_file_name)
 
     if model:
