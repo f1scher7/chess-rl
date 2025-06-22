@@ -6,7 +6,7 @@ class ChessPolicy(nn.Module):
 
     def __init__(self, conv_layers_num, in_channels_list, out_channels_list, kernel_size_list,
                  fc_layers_num, fc_in_features_list, fc_out_features_list,
-                 dropout_probability_conv=0.1, dropout_probability_fc=0.2):
+                 dropout_probability_conv=0.1, dropout_probability_fc=0.1):
         super(ChessPolicy, self).__init__()
 
         self.conv_layers_num = conv_layers_num
@@ -54,7 +54,7 @@ class ChessPolicy(nn.Module):
                 nn.init.zeros_(conv_layer.bias)
 
         for i, fc_layer in enumerate(self.fc_layers):
-            if i == len(self.fc_layers) -1:
+            if i == len(self.fc_layers) - 1:
                 nn.init.orthogonal_(tensor=fc_layer.weight, gain=0.01)
                 nn.init.zeros_(fc_layer.bias)
             else:

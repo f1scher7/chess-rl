@@ -19,8 +19,7 @@ class Utils:
 
     @staticmethod
     def save_model(model, optimizer, episodes):
-        # filename = f"chess-rl-by-f1scher7-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
-        filename = f"chess-rl-model-episodes{episodes}-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
+        filename = f"chess-rl-by-f1scher7-model-episodes{episodes}-{datetime.now().strftime('%H-%M-%S_%d-%m-%Y')}.pth"
         final_path = os.path.join(SAVED_MODELS_PATH, filename)
 
         torch.save({
