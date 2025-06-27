@@ -1,10 +1,11 @@
 import chess
-from backend.config import CASTLING_BONUS
+from typing import List, Dict, Set
+from backend.configs.game_config import GameConfig
 
 
-class Eval:
+class CustomEval:
 
-    piece_values = {
+    piece_values: Dict[int, int] = {
         chess.PAWN: 1,
         chess.KNIGHT: 3,
         chess.BISHOP: 3,
@@ -14,14 +15,14 @@ class Eval:
     }
 
 
-    def __init__(self, board):
+    def __init__(self, board: chess.Board):
         self.board = board
 
         self.white_castling_reward_given = False
         self.black_castling_reward_given = False
 
 
-    def evaluate_board(self):
+    def evaluate_board(self) -> float:
         # weights
         w1, w2, w3, w4, w5, w6 = 2.0, 1.0, 1, 0.75, 0.5, 0.5
 
@@ -37,19 +38,19 @@ class Eval:
         return evaluation
 
 
-    def evaluate_material(self):
+    def evaluate_material(self) -> float:
         evaluation = 0
 
         for square, piece in self.board.piece_map().items():
-            value = Eval.piece_values.get(piece.piece_type)
+            value = CustomEval.piece_values.get(piece.piece_type)
 
             evaluation += value if piece.color == chess.WHITE else -value
 
         return evaluation
 
 
-    def evaluate_threats(self):
-        def push_square_to_list(legal_moves_f, from_sq_f, to_sq_f, list_f):
+    def evaluate_threats(self) -> float:
+        def push_square_to_list(legal_moves_f: Set[chess.Move], from_sq_f: chess.Square, to_sq_f: chess.Square, list_f: List[chess.Square]) -> List[chess.Square]:
             move_f = chess.Move(from_square=from_sq_f, to_square=to_sq_f)
 
             if move_f in legal_moves_f:
@@ -79,7 +80,7 @@ class Eval:
             if not attackers:
                 continue
 
-            curr_piece_value = Eval.piece_values.get(piece.piece_type)
+            curr_piece_value = CustomEval.piece_values.get(piece.piece_type)
 
             if not defenders:
                 evaluation -= curr_piece_value * sign
@@ -99,7 +100,7 @@ class Eval:
         return evaluation
 
 
-    def evaluate_mobility(self):
+    def evaluate_mobility(self) -> float:
         board_copy = self.board.copy()
 
         board_copy.turn = chess.WHITE
@@ -111,7 +112,7 @@ class Eval:
         return white_player_moves - black_player_moves
 
 
-    def evaluate_king_safety(self):
+    def evaluate_king_safety(self) -> float:
         white_king = self.board.king(chess.WHITE)
         black_king = self.board.king(chess.BLACK)
 
@@ -130,24 +131,24 @@ class Eval:
 
             if self.board.piece_at(last_move.to_square).color == chess.WHITE and not self.white_castling_reward_given:
                 if self.board.is_castling(last_move):
-                    white_king_safety += CASTLING_BONUS
+                    white_king_safety += GameConfig.CASTLING_BONUS
                     self.white_castling_reward_given = True
                 elif not self.board.has_castling_rights(chess.WHITE):
-                    white_king_safety -= CASTLING_BONUS
+                    white_king_safety -= GameConfig.CASTLING_BONUS
                     self.white_castling_reward_given = True
 
             elif self.board.piece_at(last_move.to_square).color == chess.BLACK and not self.black_castling_reward_given:
                 if self.board.is_castling(last_move):
-                    black_king_safety += CASTLING_BONUS
+                    black_king_safety += GameConfig.CASTLING_BONUS
                     self.black_castling_reward_given = True
                 elif not self.board.has_castling_rights(chess.BLACK):
-                    black_king_safety -= CASTLING_BONUS
+                    black_king_safety -= GameConfig.CASTLING_BONUS
                     self.black_castling_reward_given = True
 
         return white_king_safety - black_king_safety
 
 
-    def evaluate_center_control(self):
+    def evaluate_center_control(self) -> float:
         center_squares = [chess.D4, chess.D5, chess.E4, chess.E5]
 
         white_control = 0
@@ -160,7 +161,7 @@ class Eval:
         return white_control - black_control
 
 
-    def evaluate_pawn_structure(self):
+    def evaluate_pawn_structure(self) -> float:
         def count_weak_pawns(pawns):
             weak_pawns = 0
 
@@ -196,7 +197,7 @@ class Eval:
         return black_weak_pawns - white_weak_pawns
 
 
-    def evaluate_capture_decision(self, move_played):
+    def evaluate_capture_decision(self, move_played: chess.Move) -> float:
         mover_piece = self.board.piece_at(move_played.from_square)
         mover_color = mover_piece.color
 
@@ -217,7 +218,7 @@ class Eval:
                 if board_copy.is_check():
                     continue
 
-                gain = Eval.piece_values.get(piece_captured.piece_type) - Eval.piece_values.get(piece_moving.piece_type)
+                gain = CustomEval.piece_values.get(piece_captured.piece_type) - CustomEval.piece_values.get(piece_moving.piece_type)
 
                 if gain > 1:
                     good_captures_list.append((move, gain))
@@ -233,9 +234,9 @@ class Eval:
         return reward_or_penalty
 
 
-    def get_pieces_value_sum_by_squares(self, squares):
+    def get_pieces_value_sum_by_squares(self, squares: List[chess.Square]) -> float:
         return sum(
-            Eval.piece_values.get(self.board.piece_at(sq).piece_type)
+            CustomEval.piece_values.get(self.board.piece_at(sq).piece_type)
             for sq in squares if self.board.piece_at(sq)
         )
 

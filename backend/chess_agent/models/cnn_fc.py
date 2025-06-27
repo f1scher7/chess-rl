@@ -2,12 +2,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ChessPolicy(nn.Module):
+class CnnPlusFc(nn.Module):
 
     def __init__(self, conv_layers_num, in_channels_list, out_channels_list, kernel_size_list,
                  fc_layers_num, fc_in_features_list, fc_out_features_list,
                  dropout_probability_conv=0.1, dropout_probability_fc=0.1):
-        super(ChessPolicy, self).__init__()
+        super(CnnPlusFc, self).__init__()
 
         self.conv_layers_num = conv_layers_num
         self.fc_layers_num = fc_layers_num
