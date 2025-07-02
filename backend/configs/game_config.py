@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
 class GameConfig:
     ACTION_SPACE: int = 4672
 

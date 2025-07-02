@@ -1,13 +1,18 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Tuple, List, Dict, Any
+from backend.chess_agent.models.base_model import BaseModel
 
 
-class CnnPlusFc(nn.Module):
+class CnnFc(BaseModel):
 
-    def __init__(self, conv_layers_num, in_channels_list, out_channels_list, kernel_size_list,
-                 fc_layers_num, fc_in_features_list, fc_out_features_list,
-                 dropout_probability_conv=0.1, dropout_probability_fc=0.1):
-        super(CnnPlusFc, self).__init__()
+    def __init__(self, input_shape: Tuple[int, ...],
+                 conv_layers_num: int, in_channels_list: List[int], out_channels_list: List[int], kernel_size_list: List[int],
+                 fc_layers_num: int, fc_in_features_list: List[int], fc_out_features_list: List[int],
+                 dropout_probability_conv: float, dropout_probability_fc: float, **kwargs):
+        super().__init__(input_shape, **kwargs)
+
+        self.input_shape = input_shape
 
         self.conv_layers_num = conv_layers_num
         self.fc_layers_num = fc_layers_num
@@ -82,3 +87,7 @@ class CnnPlusFc(nn.Module):
         x = self.fc_layers[-1](x)
 
         return x
+
+
+    def get_model_config(self) -> Dict[str, Any]:
+        

@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class TrainingConfig:
     INIT_EPISODE: int = 1
     EPISODES: int = 3000
