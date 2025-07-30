@@ -1,7 +1,7 @@
 import chess
 import torch
 from torch.distributions import Categorical
-from backend.chess_agent.policy import ChessPolicy
+from backend.chess_agent.models.cnn_fc.cnn_fc import CnnFc
 from backend.chess_env.chess_env import ChessEnv
 from backend.utils.utils import Utils
 from backend.utils.chess_env_utils import ChessEnvUtils
@@ -10,7 +10,7 @@ from backend.utils.chess_env_utils import ChessEnvUtils
 class VsHuman:
 
     @staticmethod
-    def make_move(model: ChessPolicy, fen: str):
+    def make_move(model: CnnFc, fen: str):
         board = chess.Board(fen)
         observation = ChessEnv.get_observation(board)
 

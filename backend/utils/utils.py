@@ -1,11 +1,12 @@
 import os
+from typing import List, Tuple, Any
 import torch
 import torch.optim as optim
 import chess.pgn
 import matplotlib.pyplot as plt
 from datetime import datetime
 from io import StringIO
-from backend.chess_agent.policy import ChessPolicy
+from backend.chess_agent.models.policy import CnnPlusFc
 from backend.chess_agent.agent_config import UPDATE_FREQUENCY, EPISODES, LEARNING_RATE, GAMMA, EPSILON, INIT_EPISODE
 from backend.config import SAVED_MODELS_PATH, SAVED_GRAPHS_PATH, TERMINAL_BONUS, CASTLING_BONUS, EVAL_SCALING_FACTOR
 
@@ -15,6 +16,19 @@ class Utils:
     @staticmethod
     def get_device():
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+    @staticmethod
+    def validate_lst_length(lst: List[Any], expected_len: int, name: str) -> None:
+        lst_len = len(lst)
+        if lst_len != expected_len:
+            raise ValueError(f"{name} ({lst_len}) != expected ({expected_len})")
+
+    @staticmethod
+    def validate_prob(val: float, name: str) -> None:
+        if 0.0 > val or val >= 1.0:
+            raise ValueError(f"{name} ({val}) is not in range [0.0, 1.0)")
+
 
 
     @staticmethod
@@ -31,7 +45,7 @@ class Utils:
 
 
     @staticmethod
-    def load_model(model, optimizer, file_name):
+    def load_model(model: CnnPlusFc, optimizer, file_name: str) -> None:
         path = str(os.path.join(SAVED_MODELS_PATH, file_name))
         checkpoint = torch.load(path)
 
@@ -45,10 +59,10 @@ class Utils:
 
 
     @staticmethod
-    def create_default_model_and_optimizer():
+    def create_default_model_and_optimizer() -> Tuple[CnnPlusFc, torch.optim.Optimizer]:
         device = Utils.get_device()
 
-        default_model = ChessPolicy(
+        default_model = CnnPlusFc(
             conv_layers_num=3,
             in_channels_list=[12, 64, 128],
             out_channels_list=[64, 128, 256],

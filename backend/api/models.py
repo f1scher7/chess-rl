@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from cachetools import LRUCache
 from typing import List, Tuple
 from torch.optim import Optimizer
-from backend.chess_agent.policy import CnnPlusFc
+from backend.chess_agent.models.cnn_fc.cnn_fc import CnnFc
 from backend.utils.utils import Utils
 
 
@@ -33,11 +33,11 @@ class Move(BaseModel):
 
 class ModelStore:
 
-    _cache: LRUCache[str, Tuple[CnnPlusFc, Optimizer]] = LRUCache(maxsize=7)
+    _cache: LRUCache[str, Tuple[CnnFc, Optimizer]] = LRUCache(maxsize=7)
 
 
     @classmethod
-    def load_model(cls, model_name: str) -> Tuple[CnnPlusFc, Optimizer]:
+    def load_model(cls, model_name: str) -> Tuple[CnnFc, Optimizer]:
         if model_name not in cls._cache:
             model, optimizer = Utils.create_default_model_and_optimizer()
             Utils.load_model(model=model, optimizer=optimizer, file_name=model_name)
