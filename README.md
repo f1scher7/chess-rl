@@ -70,7 +70,7 @@ ChessRl is the self-play Agent which learns to play chess through reinforcement 
     nvm use v24.0.2
     ```
   
-* Modify chess-rl-frontend/.env.development
+* Modify frontend/.env.development
     ```
     REACT_APP_ENV=development
     PORT=3007
