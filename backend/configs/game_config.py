@@ -1,0 +1,16 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class GameConfig:
+    ACTION_SPACE: int = 4672
+
+    TERMINAL_BONUS: float = 1.0
+    CASTLING_BONUS: float = 0.1
+
+    CUSTOM_EVAL_SCALING_FACTOR: int = 50
+    MAX_MOVES_PER_EPISODE: int = 250
+
+    AGENT_DEFAULT_WHITE_ELO: int = 700
+    AGENT_DEFAULT_BLACK_ELO: int = 700
+    K_FACTOR: int = 32

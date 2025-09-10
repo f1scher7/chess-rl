@@ -2,6 +2,7 @@ import chess
 import torch
 import numpy as np
 from torch.distributions import Categorical
+from backend.chess_env.chess_env import ChessEnv
 from backend.chess_agent.agent_config import *
 from backend.utils.chess_env_utils import ChessEnvUtils
 from backend.utils.utils import Utils
@@ -100,8 +101,8 @@ class SelfPlay:
         return white_loss + black_loss
 
 
-    def collect_episode(self, env, model):
-        observation, info = env.reset()
+    def collect_episode(self, env: ChessEnv, model):
+        observation = env.reset(,
 
         done = False
 
