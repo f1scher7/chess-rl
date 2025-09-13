@@ -17,4 +17,4 @@ class BaseModelConfig:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]):
-        return cls(**data)
+        return cls(**data) # unpack data dict to create and return an object

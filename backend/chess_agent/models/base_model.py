@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 from abc import ABC, abstractmethod
-from typing import Dict, Tuple, Any
+from typing import Tuple
+from backend.chess_agent.models.base_model_config import BaseModelConfig
 
 
 class BaseModel(ABC, nn.Module):
@@ -21,11 +22,7 @@ class BaseModel(ABC, nn.Module):
         pass
 
     @abstractmethod
-    def get_model_config(self) -> Dict[str, Any]:
-        pass
-
-    @abstractmethod
-    def save_model(self, path: str) -> None:
+    def get_config(self) -> BaseModelConfig:
         pass
 
     def get_num_parameters(self) -> int:
