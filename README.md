@@ -1,5 +1,6 @@
 # ChessRl
-![image](https://github.com/user-attachments/assets/ca8efbc9-83b7-4a26-a38f-3c0abe391343)
+<img width="2474" height="1282" alt="image" src="https://github.com/user-attachments/assets/ee16471c-2658-4727-8aab-23a82fd1d6fe" />
+
 
 ChessRl is the self-play Agent which learns to play chess through reinforcement learning
 
