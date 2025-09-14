@@ -8,7 +8,7 @@ from backend.utils.utils import Utils
 
 @dataclass(frozen=True)
 class CnnFcConfig(BaseModelConfig):
-    model_type = ModelType.CNN_FC.value
+    model_type = ModelType.CNN_FC
 
     conv_layer_num: int
     in_channel_lst: List[int]
@@ -48,7 +48,7 @@ class CnnFcConfig(BaseModelConfig):
         kernel_sizes = [3, 3, 3]
 
         return cls(
-            model_type=ModelType.CNN_FC.value, input_shape=(12, 8, 8),
+            model_type=ModelType.CNN_FC, input_shape=(12, 8, 8),
             conv_layer_num=3, in_channel_lst=[12, 64, 128], out_channel_lst=[64, 128, 256],
             kernel_size_lst=[3, 3, 3], stride=1, padding_lst=[k // 2 for k in kernel_sizes],
             fc_layer_num=2, fc_in_feature_lst=[16384, 2048], fc_out_feature_lst=[2048, GameConfig.ACTION_SPACE], # TODO: fix ACTION_SPACE (that value has to change depends on amount of legal moves while playing)

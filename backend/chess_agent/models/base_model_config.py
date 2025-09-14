@@ -1,12 +1,13 @@
 import json
 from dataclasses import dataclass, asdict
 from typing import Tuple, Dict, Any
+from backend.enums import ModelType
 
 
 @dataclass(frozen=True)
 class BaseModelConfig:
     input_shape: Tuple[int, ...]
-    model_type: str
+    model_type: ModelType
 
 
     def to_dict(self) -> Dict[str, Any]:

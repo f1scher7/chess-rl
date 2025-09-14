@@ -85,3 +85,5 @@ __pycache__/
 /backend/scripts/remove/
 /backend/saved_games/
 /backend/saved_models/
+
+/frontend/node_modules/
