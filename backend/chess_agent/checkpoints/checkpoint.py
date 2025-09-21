@@ -28,6 +28,7 @@ class Checkpoint:
     def from_dict(cls, data: Dict[str, Any]) -> 'Checkpoint':
         return cls(**data)
 
+
     @classmethod
     def create(cls, model: BaseModel, optimizer: Optional[torch.optim.Optimizer] = None,
                episode: Optional[int] = None, loss: Optional[float] = None, elo: Optional[int] = None) -> 'Checkpoint':
@@ -50,6 +51,7 @@ class Checkpoint:
             loss=loss,
             elo=elo,
         )
+
 
     def has_optimizer(self) -> bool:
         return self.optimizer_state_dict is not None

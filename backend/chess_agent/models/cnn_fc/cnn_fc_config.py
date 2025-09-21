@@ -42,6 +42,7 @@ class CnnFcConfig(BaseModelConfig):
         for i in range(self.fc_layer_num):
             Utils.validate_prob(val=self.dropout_prob_fc_lst[i], name="dropout_prob_fc_lst[i]")
 
+
     # TODO: review the values
     @classmethod
     def for_4gb_vram(cls):

@@ -22,7 +22,7 @@ class BaseModel(ABC, nn.Module):
         pass
 
     @abstractmethod
-    def get_config(self) -> BaseModelConfig:
+    def get_model_config(self) -> BaseModelConfig:
         pass
 
     def get_num_parameters(self) -> int:
