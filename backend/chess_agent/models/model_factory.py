@@ -7,13 +7,17 @@ from backend.enums import ModelType
 
 
 class ModelFactory:
-    _model_registry: Dict[ModelType, Type[BaseModel]] = {
-        ModelType.CNN_FC: CnnFc,
-    }
+    _model_registry: Dict[ModelType, Type[BaseModel]] = {}
+    _config_registry: Dict[ModelType, Type[BaseModelConfig]] = {}
+    _initialized = False
 
-    _config_registry: Dict[ModelType, Type[BaseModelConfig]] = {
-        ModelType.CNN_FC: CnnFcConfig,
-    }
+
+    @classmethod
+    def initialize(cls):
+        if not cls._initialized:
+            cls.register_model(ModelType.CNN_FC, CnnFc, CnnFcConfig)
+
+            cls._initialized = True
 
 
     @classmethod
@@ -30,10 +34,12 @@ class ModelFactory:
 
         return model_class(config=config, **kwargs)
 
+
     @classmethod
     def register_model(cls, model_type: ModelType, model_class: Type[BaseModel], config_class: Type[BaseModelConfig]):
         cls._model_registry[model_type] = model_class
         cls._config_registry[model_type] = config_class
+
 
     @classmethod
     def get_supported_model_types(cls) -> List[ModelType]:
