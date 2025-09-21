@@ -1,11 +1,12 @@
 import chess
-from backend.config import K_FACTOR
+from typing import List, Tuple
+from backend.configs.game_config import GameConfig
 
 
 class ChessEnvUtils:
 
     @staticmethod
-    def get_legal_action_idxs(board):
+    def get_legal_action_idxs(board: chess.Board) -> List[int]:
         legal_moves = list(board.legal_moves)
         legal_moves_idx = []
 
@@ -16,7 +17,7 @@ class ChessEnvUtils:
 
 
     @staticmethod
-    def get_offset_move(move):
+    def get_offset_move(move: chess.Move) -> int:
         if move.promotion:
             return 225 + (move.promotion - 2)  # move_str.promotion - 2 = skip pawn
 
@@ -36,7 +37,7 @@ class ChessEnvUtils:
 
 
     @staticmethod
-    def get_move_idx(move):
+    def get_move_idx(move: chess.Move) -> int:
         from_square = move.from_square
 
         move_offset = ChessEnvUtils.get_offset_move(move=move)
@@ -45,18 +46,18 @@ class ChessEnvUtils:
 
 
     @staticmethod
-    def update_elo(winner, white_elo, black_elo):
+    def update_elo(winner: bool | None, white_elo: float, black_elo: float) -> Tuple[float, float]:
         expected_score_white = 1 / (1 + 10 ** ((black_elo - white_elo) / 400))  # chance of winning
         expected_score_black = 1 / (1 + 10 ** ((white_elo - black_elo) / 400))  # chance of winning
 
         if winner == chess.WHITE:
-            white_elo += K_FACTOR * (1 - expected_score_white)
-            black_elo += K_FACTOR * (0 - expected_score_black)
+            white_elo += GameConfig.K_FACTOR * (1 - expected_score_white)
+            black_elo += GameConfig.K_FACTOR * (0 - expected_score_black)
         elif winner == chess.BLACK:
-            black_elo += K_FACTOR * (1 - expected_score_black)
-            white_elo += K_FACTOR * (0 - expected_score_white)
+            black_elo += GameConfig.K_FACTOR * (1 - expected_score_black)
+            white_elo += GameConfig.K_FACTOR * (0 - expected_score_white)
         else:
-            white_elo += K_FACTOR * (0.5 - expected_score_white)
-            black_elo += K_FACTOR * (0.5 - expected_score_black)
+            white_elo += GameConfig.K_FACTOR * (0.5 - expected_score_white)
+            black_elo += GameConfig.K_FACTOR * (0.5 - expected_score_black)
 
         return white_elo, black_elo
