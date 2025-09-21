@@ -1,57 +1,51 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Tuple, List, Dict, Any
 from backend.chess_agent.models.base_model import BaseModel
+from backend.chess_agent.models.base_model_config import BaseModelConfig
+from backend.chess_agent.models.cnn_fc.cnn_fc_config import CnnFcConfig
 
 
 class CnnFc(BaseModel):
 
-    def __init__(self, input_shape: Tuple[int, ...],
-                 conv_layers_num: int, in_channels_list: List[int], out_channels_list: List[int], kernel_size_list: List[int],
-                 fc_layers_num: int, fc_in_features_list: List[int], fc_out_features_list: List[int],
-                 dropout_probability_conv: float, dropout_probability_fc: float, **kwargs):
-        super().__init__(input_shape, **kwargs)
+    def __init__(self, config: CnnFcConfig, **kwargs):
+        super().__init__(config.input_shape, **kwargs)
 
-        self.input_shape = input_shape
-
-        self.conv_layers_num = conv_layers_num
-        self.fc_layers_num = fc_layers_num
-        self.dropout_probability_conv = dropout_probability_conv
-        self.dropout_probability_fc = dropout_probability_fc
+        self.config = config
 
         self.conv_layers = nn.ModuleList([
             nn.Conv2d(
-                in_channels=in_channels_list[i],
-                out_channels=out_channels_list[i],
-                kernel_size=kernel_size_list[i],
-                padding=kernel_size_list[i] // 2,
-                stride=1
+                in_channels=config.in_channel_lst[i],
+                out_channels=config.out_channel_lst[i],
+                kernel_size=config.kernel_size_lst[i],
+                padding=config.padding_lst[i] // 2,
+                stride=config.stride
             )
-            for i in range(conv_layers_num)
+            for i in range(config.conv_layer_num)
         ])
 
         # normalization for each channel
         self.instance_norm_layers = nn.ModuleList([
             nn.InstanceNorm2d(
-                num_features=out_channels_list[i],
+                num_features=config.out_channel_lst[i],
                 affine=True  # instance_norm_layer's weights and biases (learning scaling and shifting)
-            ) for i in range(self.conv_layers_num)
+            ) for i in range(config.conv_layer_num)
         ])
 
         self.fc_layers = nn.ModuleList([
             nn.Linear(
-                in_features=fc_in_features_list[i],
-                out_features=fc_out_features_list[i]
+                in_features=config.fc_in_feature_lst[i],
+                out_features=config.fc_out_feature_lst[i]
             )
-            for i in range(fc_layers_num)
+            for i in range(config.fc_layer_num)
         ])
 
-        self.layer_norm = nn.LayerNorm(normalized_shape=fc_in_features_list[0])
+        self.layer_norm = nn.LayerNorm(normalized_shape=config.fc_in_feature_lst[0])
 
-        self.__initialize_weights()
+        self.init_weights()
 
 
-    def __initialize_weights(self):
+    def init_weights(self):
         for conv_layer in self.conv_layers:
             nn.init.kaiming_uniform_(tensor=conv_layer.weight, nonlinearity='relu')  # he
 
@@ -69,19 +63,20 @@ class CnnFc(BaseModel):
                     nn.init.zeros_(fc_layer.bias)
 
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         for i, conv_layer in enumerate(self.conv_layers):
             x = conv_layer(x)
             x = self.instance_norm_layers[i](x)
             x = F.relu(x)
-            x = F.dropout2d(input=x, p=self.dropout_probability_conv, training=self.training)
+            x = F.dropout2d(input=x, p=self.config.dropout_prob_conv_lst[i], training=self.training)
 
+        # flatten for FC layer
         x = x.view(x.size(0), -1)
         x = self.layer_norm(x)
 
         for i, fc_layer in enumerate(self.fc_layers[:-1]):
             x = F.relu(fc_layer(x))
-            x = F.dropout(input=x, p=self.dropout_probability_fc, training=self.training)
+            x = F.dropout(input=x, p=self.config.dropout_prob_fc_lst[i], training=self.training)
 
         # Last FC layer
         x = self.fc_layers[-1](x)
@@ -89,5 +84,5 @@ class CnnFc(BaseModel):
         return x
 
 
-    def get_model_config(self) -> Dict[str, Any]:
-        
+    def get_model_config(self) -> BaseModelConfig:
+        return self.config
