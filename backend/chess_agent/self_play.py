@@ -2,10 +2,11 @@ import chess
 import torch
 import numpy as np
 from torch.distributions import Categorical
+from backend.chess_agent.checkpoints.checkpoint_manager import CheckpointManager
 from backend.chess_env.chess_env import ChessEnv
-from backend.chess_agent.agent_config import *
+from backend.configs.training_config import TrainingConfig
 from backend.utils.chess_env_utils import ChessEnvUtils
-from backend.utils.utils import Utils
+from backend.utils.plot_utils import PlotUtils
 
 
 class SelfPlay:
@@ -31,13 +32,13 @@ class SelfPlay:
         interrupted = False
 
         try:
-            for episode in range (INIT_EPISODE, EPISODES + 1):
+            for episode in range (TrainingConfig.INIT_EPISODE, TrainingConfig.EPISODES + 1):
                 curr_episode = episode
 
                 self.collect_episode(env=env, model=model)
                 self.log_training_info(episode=episode, eval_score_list=env.eval_score_list, loss=None)
 
-                if episode % UPDATE_FREQUENCY == 0:
+                if episode % TrainingConfig.UPDATE_FREQUENCY == 0:
                     self.compute_discounted_rewards()
 
                     loss = self.update_model(model=model, optimizer=optimizer)
@@ -55,13 +56,15 @@ class SelfPlay:
             if model_save:
                 interrupted = True
                 print("Training interrupted! Saving model...")
-                Utils.save_model(model=model, optimizer=optimizer, episodes=curr_episode)
+                CheckpointManager.save_checkpoint(model=model, optimizer=optimizer,
+                                                  episode=curr_episode, loss=self.loss_list[-1])
         finally:
             if model_save and not interrupted:
-                Utils.save_model(model=model, optimizer=optimizer, episodes=curr_episode)
+                CheckpointManager.save_checkpoint(model=model, optimizer=optimizer,
+                                                  episode=curr_episode, loss=self.loss_list[-1])
 
             print(f"White wins: {self.white_wins}; Black wins: {self.black_wins}; Draws: {self.draws};")
-            Utils.plot_loss(loss_list=self.loss_list, mode="self-play")
+            PlotUtils.plot_loss(loss_list=self.loss_list, mode="self-play")
 
 
     def update_model(self, model, optimizer):
@@ -102,7 +105,7 @@ class SelfPlay:
 
 
     def collect_episode(self, env: ChessEnv, model):
-        observation = env.reset(,
+        observation = env.reset()
 
         done = False
 
@@ -126,11 +129,11 @@ class SelfPlay:
         black_discounted_rewards = []
 
         for reward in reversed(self.all_white_rewards):
-            white_cumulative_rewards = reward + GAMMA * white_cumulative_rewards
+            white_cumulative_rewards = reward + TrainingConfig.GAMMA * white_cumulative_rewards
             white_discounted_rewards.insert(0, white_cumulative_rewards)
 
         for reward in reversed(self.all_black_rewards):
-            black_cumulative_rewards = reward + GAMMA * black_cumulative_rewards
+            black_cumulative_rewards = reward + TrainingConfig.GAMMA * black_cumulative_rewards
             black_discounted_rewards.insert(0, black_cumulative_rewards)
 
         self.all_white_rewards = torch.tensor(data=white_discounted_rewards, dtype=torch.float32).to(device=self.device)
@@ -151,7 +154,7 @@ class SelfPlay:
         probs = torch.softmax(input=masked_logits, dim=1)
         dist = Categorical(probs=probs)  # discrete distribution
 
-        if np.random.rand() < EPSILON:
+        if np.random.rand() < TrainingConfig.EPSILON:
             action_chosen = int(np.random.choice(legal_action_idxs))
             action_chosen_tensor = torch.tensor(data=action_chosen, dtype=torch.long, device=logits.device)
             log_prob = torch.log(torch.tensor(data=(1.0 / len(legal_action_idxs)), dtype=torch.float32, device=logits.device)).unsqueeze(0)
