@@ -11,7 +11,7 @@ class ChessEnvUtils:
         legal_moves_idx = []
 
         for move in legal_moves:
-            legal_moves_idx.append(ChessEnvUtils.get_move_idx(move=move))
+            legal_moves_idx.append(ChessEnvUtils.get_move_idx(move))
 
         return legal_moves_idx
 
