@@ -28,31 +28,20 @@ class ChessEnv(gym.Env):
 
 
     def step(self, action_no: int) -> Tuple[np.ndarray, Tuple[float, float], bool, Dict[str, any]]:
-        curr_player = self.board.turn
-
         move = self.decode_action(board=self.board, action_no=action_no)
-
-        self.eval.board = self.board
-        capture_reward_or_penalty = self.eval.evaluate_capture_decision(move_played=move) / GameConfig.CUSTOM_EVAL_SCALING_FACTOR
-
         self.board.push(move)
 
         observation = self.get_observation(board=self.board)
-        white_reward, black_reward, done, winner = self.get_reward()
+        white_reward, black_reward, done, winner = self.get_reward(move)
         info = {
             'board_fen': self.board.fen(),
             'winner': winner,
         }
 
-        if curr_player == chess.WHITE:
-            white_reward += capture_reward_or_penalty
-        else:
-            black_reward += capture_reward_or_penalty
-
         return observation, (white_reward, black_reward), done, info
 
 
-    def get_reward(self) -> Tuple[float, float, bool, Union[int, None]]:
+    def get_reward(self, move_played: chess.Move) -> Tuple[float, float, bool, Union[int, None]]:
         if self.board.is_checkmate():
             winner = not self.board.turn
 
@@ -61,6 +50,7 @@ class ChessEnv(gym.Env):
             else:
                 white_reward, black_reward = -GameConfig.TERMINAL_BONUS, GameConfig.TERMINAL_BONUS
 
+            # TODO: doesnt make sense while self-play
             self.white_elo, self.black_elo = ChessEnvUtils.update_elo(winner=winner, white_elo=self.white_elo, black_elo=self.black_elo)
 
             return white_reward, black_reward, True, winner
@@ -69,15 +59,10 @@ class ChessEnv(gym.Env):
             return 0, 0, True, None
 
         self.eval.board = self.board
-        raw_eval_score = self.eval.evaluate_board()
-        eval_score = np.tanh(raw_eval_score / GameConfig.CUSTOM_EVAL_SCALING_FACTOR) * 0.8
+        eval_score = self.eval.evaluate_board(move_played)
 
-        # if len(self.eval_score_list) < 50:
-        #     print(f"DEBUG: Raw eval = {raw_eval_score:.2f}, EVAL_SCALING_FACTOR = {EVAL_SCALING_FACTOR}")
-        #     print(f"DEBUG: tanh({raw_eval_score}/{EVAL_SCALING_FACTOR}) = {np.tanh(raw_eval_score / EVAL_SCALING_FACTOR):.6f}")
-
-        white_reward = eval_score
-        black_reward = -eval_score
+        white_reward = eval_score # if eval_score is positive it means that white has advantage(positive reward) and black doesn't
+        black_reward = -eval_score # if eval_score is negative it means that black has advantage(positive reward) and white doesn't
 
         self.eval_score_list.append(eval_score)
 
