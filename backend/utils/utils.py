@@ -43,3 +43,23 @@ class Utils:
             moves.append(move.uci())
 
         return SavedGameContent(white_elo=white_elo, black_elo=black_elo, result=result, moves=moves)
+
+
+    @staticmethod
+    def min_max_normalization(lst: List[float], bounds: tuple[float, float]) -> List[float]:
+        min_num = min(lst)
+        max_num = max(lst)
+        lower = bounds[0]
+        upper = bounds[1]
+
+        if upper == lower:
+            raise ValueError("Bounds must not be equal")
+
+        if min_num == max_num:
+            raise ValueError("Cannot normalize constant list")
+
+        lst_normed = [lower + (i - min_num) * (upper - lower) / (max_num - min_num) for i in lst]
+
+        return lst_normed
+
+
