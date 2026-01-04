@@ -1,6 +1,7 @@
 import chess
 from typing import List, Dict, Set
 from backend.configs.game_config import GameConfig
+from backend.utils.utils import Utils
 
 
 class CustomEval:
@@ -14,6 +15,15 @@ class CustomEval:
         chess.KING: 0
     }
 
+    MATERIAL_WEIGHT = 0.3
+    THREATS_WEIGHT = 0.2
+    CAPTURE_DECISION_WEIGHT = 0.2
+    KING_SAFETY_WEIGHT = 0.1
+    PAWN_STRUCTURE_WEIGHT = 0.1
+    MOBILITY_WEIGHT = 0.05
+    CENTER_CONTROL_WEIGHT = 0.05
+    NORMALIZATION_BOUND = (-0.3, 0.3)
+
 
     def __init__(self, board: chess.Board):
         self.board = board
@@ -22,20 +32,20 @@ class CustomEval:
         self.black_castling_reward_given = False
 
 
-    def evaluate_board(self) -> float:
-        # weights
-        w1, w2, w3, w4, w5, w6 = 2.0, 1.0, 1, 0.75, 0.5, 0.5
+    def evaluate_board(self, move_played: chess.Move) -> float:
+        evaluation_lst = [
+            self.MATERIAL_WEIGHT * self.evaluate_material(),
+            self.THREATS_WEIGHT * self.evaluate_threats(),
+            self.CAPTURE_DECISION_WEIGHT * self.evaluate_capture_decision(move_played),
+            self.KING_SAFETY_WEIGHT * self.evaluate_king_safety(),
+            self.MOBILITY_WEIGHT * self.evaluate_mobility(),
+            self.CENTER_CONTROL_WEIGHT * self.evaluate_center_control(),
+            self.PAWN_STRUCTURE_WEIGHT * self.evaluate_pawn_structure()
+        ]
 
-        evaluation = (
-            w1 * self.evaluate_material() +
-            w2 * self.evaluate_threats() +
-            w3 * self.evaluate_king_safety() +
-            w4 * self.evaluate_mobility() +
-            w5 * self.evaluate_center_control() +
-            w6 * self.evaluate_pawn_structure()
-        )
+        evaluation_lst = Utils.min_max_normalization(evaluation_lst, self.NORMALIZATION_BOUND)
 
-        return evaluation
+        return sum(evaluation_lst)
 
 
     def evaluate_material(self) -> float:
@@ -135,7 +145,6 @@ class CustomEval:
                     self.white_castling_reward_given = True
                 elif not self.board.has_castling_rights(chess.WHITE):
                     white_king_safety -= GameConfig.CASTLING_BONUS
-                    self.white_castling_reward_given = True
 
             elif self.board.piece_at(last_move.to_square).color == chess.BLACK and not self.black_castling_reward_given:
                 if self.board.is_castling(last_move):
@@ -143,7 +152,6 @@ class CustomEval:
                     self.black_castling_reward_given = True
                 elif not self.board.has_castling_rights(chess.BLACK):
                     black_king_safety -= GameConfig.CASTLING_BONUS
-                    self.black_castling_reward_given = True
 
         return white_king_safety - black_king_safety
 
@@ -200,8 +208,9 @@ class CustomEval:
     def evaluate_capture_decision(self, move_played: chess.Move) -> float:
         mover_piece = self.board.piece_at(move_played.from_square)
         mover_color = mover_piece.color
+        sign = 1 if mover_color == chess.WHITE else -1
 
-        reward_or_penalty = 0
+        evaluation = 0
         good_captures_list = []
 
         for move in self.board.legal_moves:
@@ -227,11 +236,11 @@ class CustomEval:
             best_move, best_gain = max(good_captures_list, key=lambda x: x[1])
 
             if move_played not in [m for m, _ in good_captures_list]:
-                reward_or_penalty -= best_gain
+                evaluation -= best_gain
             else:
-                reward_or_penalty += best_gain
+                evaluation += best_gain
 
-        return reward_or_penalty
+        return evaluation * sign
 
 
     def get_pieces_value_sum_by_squares(self, squares: List[chess.Square]) -> float:

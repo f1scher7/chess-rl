@@ -8,7 +8,6 @@ class GameConfig:
     TERMINAL_BONUS: float = 1.0
     CASTLING_BONUS: float = 0.1
 
-    CUSTOM_EVAL_SCALING_FACTOR: int = 50
     MAX_MOVES_PER_EPISODE: int = 250
 
     AGENT_DEFAULT_WHITE_ELO: int = 700
